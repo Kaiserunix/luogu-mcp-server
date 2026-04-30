@@ -1,4 +1,12 @@
-import type { ProblemRecord, ProblemSample, ProblemSetRecord, ProblemSetSummary, ProblemSummary, SearchResults } from "./types.js";
+import type {
+  ProblemRecord,
+  ProblemSample,
+  ProblemSetRecord,
+  ProblemSetSummary,
+  ProblemSummary,
+  SearchResults,
+  UserProfile
+} from "./types.js";
 
 interface ProblemPayload {
   data?: {
@@ -43,6 +51,30 @@ interface ProblemSetPayload {
       description?: unknown;
       problemCount?: unknown;
       problems?: unknown;
+    };
+  };
+}
+
+interface UserProfilePayload {
+  data?: {
+    gu?: {
+      rating?: unknown;
+      scores?: unknown;
+    };
+    user?: {
+      uid?: unknown;
+      name?: unknown;
+      avatar?: unknown;
+      slogan?: unknown;
+      badge?: unknown;
+      color?: unknown;
+      followingCount?: unknown;
+      followerCount?: unknown;
+      ranking?: unknown;
+      passedProblemCount?: unknown;
+      submittedProblemCount?: unknown;
+      registerTime?: unknown;
+      introduction?: unknown;
     };
   };
 }
@@ -157,6 +189,33 @@ export function normalizeProblemSetPayload(payload: unknown, idHint: string): Pr
   };
 }
 
+export function normalizeUserProfilePayload(payload: unknown): UserProfile {
+  const source = payload as UserProfilePayload;
+  const user = source.data?.user;
+  if (!user || typeof user.uid !== "number" || typeof user.name !== "string") {
+    throw new Error("Luogu response did not include a usable user profile payload.");
+  }
+
+  return {
+    uid: user.uid,
+    name: user.name,
+    sourceUrl: `https://www.luogu.com.cn/user/${user.uid}`,
+    avatar: asOptionalString(user.avatar),
+    slogan: asOptionalString(user.slogan),
+    badge: asOptionalString(user.badge),
+    color: asOptionalString(user.color),
+    followingCount: asOptionalNumber(user.followingCount),
+    followerCount: asOptionalNumber(user.followerCount),
+    ranking: asOptionalNumber(user.ranking),
+    passedProblemCount: asOptionalNullableNumber(user.passedProblemCount),
+    submittedProblemCount: asOptionalNullableNumber(user.submittedProblemCount),
+    registerTime: asOptionalNumber(user.registerTime),
+    introduction: asOptionalString(user.introduction),
+    guRating: asOptionalNumber(source.data?.gu?.rating),
+    guScores: normalizeScoreRecord(source.data?.gu?.scores)
+  };
+}
+
 function normalizeProblemSetProblems(value: unknown): ProblemSummary[] {
   if (!Array.isArray(value)) {
     return [];
@@ -215,8 +274,29 @@ function asString(value: unknown): string {
   return typeof value === "string" ? value : "";
 }
 
+function asOptionalString(value: unknown): string | undefined {
+  return typeof value === "string" ? value : undefined;
+}
+
 function asOptionalNumber(value: unknown): number | undefined {
   return typeof value === "number" ? value : undefined;
+}
+
+function asOptionalNullableNumber(value: unknown): number | null | undefined {
+  if (value === null) {
+    return null;
+  }
+
+  return asOptionalNumber(value);
+}
+
+function normalizeScoreRecord(value: unknown): Record<string, number> | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const entries = Object.entries(value as Record<string, unknown>).filter((entry): entry is [string, number] => typeof entry[1] === "number");
+  return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 function asCount(value: unknown, fallback: number): number {

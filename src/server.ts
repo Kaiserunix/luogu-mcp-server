@@ -2,9 +2,13 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
+  findRelatedProblemsTool,
   fetchProblemSetTool,
   fetchProblemTool,
+  getCapabilitiesTool,
+  getUserProfileTool,
   recommendProblemsTool,
+  resolveProblemTool,
   searchProblemSetsTool,
   searchProblemsTool
 } from "./tools.js";
@@ -12,15 +16,19 @@ import {
 export const LUOGU_MCP_TOOL_NAMES = [
   "luogu_search_problems",
   "luogu_fetch_problem",
+  "luogu_resolve_problem",
+  "luogu_find_related_problems",
   "luogu_search_problem_sets",
   "luogu_fetch_problem_set",
-  "luogu_recommend_problems"
+  "luogu_recommend_problems",
+  "luogu_get_user_profile",
+  "luogu_get_capabilities"
 ] as const;
 
 export function createLuoguMcpServer(): McpServer {
   const server = new McpServer({
     name: "luogu-mcp-server",
-    version: "0.1.0"
+    version: "0.2.0"
   });
 
   server.registerTool(
@@ -56,6 +64,44 @@ export function createLuoguMcpServer(): McpServer {
       }
     },
     async (input) => toToolResult(await fetchProblemTool(input))
+  );
+
+  server.registerTool(
+    "luogu_resolve_problem",
+    {
+      title: "Resolve Luogu Problem",
+      description: "Resolve a Luogu problem from a URL, problem id, or title fragment, then fetch the problem details.",
+      inputSchema: {
+        query: z.string().min(1).describe("Luogu URL, pid such as P1305, or title/keyword fragment."),
+        maxStatementChars: z.number().int().min(200).max(30000).optional().describe("Trim long statements for model context control.")
+      },
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: true
+      }
+    },
+    async (input) => toToolResult(await resolveProblemTool(input))
+  );
+
+  server.registerTool(
+    "luogu_find_related_problems",
+    {
+      title: "Find Related Luogu Problems",
+      description: "Find related Luogu practice problems by mixing topic/pain-point recommendations with live keyword search.",
+      inputSchema: {
+        query: z.string().optional().describe("Free-text query, title fragment, or topic phrase."),
+        pid: z.string().optional().describe("Current Luogu problem id, used for context and exclusion in future versions."),
+        topic: z.string().optional().describe("Topic such as binary_tree, recursion, matrix, output_format, tree_distance."),
+        painPoint: z.string().optional().describe("Student pain point such as traversal_order_confusion or sentinel_input."),
+        currentProblemId: z.string().optional().describe("Exclude this current Luogu problem id."),
+        limit: z.number().int().min(1).max(20).optional().describe("Maximum returned related problems.")
+      },
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: true
+      }
+    },
+    async (input) => toToolResult(await findRelatedProblemsTool(input))
   );
 
   server.registerTool(
@@ -110,6 +156,36 @@ export function createLuoguMcpServer(): McpServer {
       }
     },
     async (input) => toToolResult(recommendProblemsTool(input))
+  );
+
+  server.registerTool(
+    "luogu_get_user_profile",
+    {
+      title: "Get Luogu User Profile",
+      description: "Fetch public Luogu user profile data by uid.",
+      inputSchema: {
+        uid: z.number().int().min(1).describe("Luogu user id.")
+      },
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: true
+      }
+    },
+    async (input) => toToolResult(await getUserProfileTool(input))
+  );
+
+  server.registerTool(
+    "luogu_get_capabilities",
+    {
+      title: "Get Luogu Route Capabilities",
+      description: "Report which LeetCode-style route capabilities are available, auth-required, or planned for Luogu.",
+      inputSchema: {},
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false
+      }
+    },
+    async () => toToolResult(getCapabilitiesTool())
   );
 
   return server;

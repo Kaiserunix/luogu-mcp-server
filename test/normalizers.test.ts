@@ -3,7 +3,8 @@ import {
   normalizeProblemPayload,
   normalizeProblemSearchPayload,
   normalizeProblemSetPayload,
-  normalizeProblemSetSearchPayload
+  normalizeProblemSetSearchPayload,
+  normalizeUserProfilePayload
 } from "../src/normalizers.js";
 
 describe("Luogu payload normalizers", () => {
@@ -82,5 +83,37 @@ describe("Luogu payload normalizers", () => {
 
     expect(search.items[0].sourceUrl).toBe("https://www.luogu.com.cn/training/100");
     expect(detail.problems[0].id).toBe("P1001");
+  });
+
+  test("normalizes a public user profile", () => {
+    const profile = normalizeUserProfilePayload({
+      data: {
+        user: {
+          uid: 1,
+          name: "kkksc03",
+          slogan: "洛谷吉祥物",
+          avatar: "https://cdn.luogu.com.cn/upload/usericon/1.png",
+          badge: "吉祥物",
+          color: "Purple",
+          followingCount: 137,
+          followerCount: 49761,
+          ranking: 3916,
+          registerTime: 1340000000,
+          introduction: "hello"
+        },
+        gu: {
+          rating: 217,
+          scores: { practice: 37 }
+        }
+      }
+    });
+
+    expect(profile).toMatchObject({
+      uid: 1,
+      name: "kkksc03",
+      sourceUrl: "https://www.luogu.com.cn/user/1",
+      followerCount: 49761,
+      guRating: 217
+    });
   });
 });

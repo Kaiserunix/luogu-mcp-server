@@ -48,3 +48,22 @@ export interface SearchResults<T> {
   total: number;
   items: T[];
 }
+
+export interface UserProfile {
+  uid: number;
+  name: string;
+  sourceUrl: string;
+  avatar?: string;
+  slogan?: string;
+  badge?: string;
+  color?: string;
+  followingCount?: number;
+  followerCount?: number;
+  ranking?: number;
+  passedProblemCount?: number | null;
+  submittedProblemCount?: number | null;
+  registerTime?: number;
+  introduction?: string;
+  guRating?: number;
+  guScores?: Record<string, number>;
+}

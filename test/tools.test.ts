@@ -2,7 +2,11 @@ import { describe, expect, test } from "vitest";
 import {
   fetchProblemTool,
   fetchProblemSetTool,
+  findRelatedProblemsTool,
+  getCapabilitiesTool,
+  getUserProfileTool,
   recommendProblemsTool,
+  resolveProblemTool,
   searchProblemSetsTool,
   searchProblemsTool
 } from "../src/tools.js";
@@ -98,5 +102,83 @@ describe("Luogu MCP tool handlers", () => {
 
     expect(result.items.map((item) => item.id)).toEqual(["P1305", "P1030", "P1827"]);
     expect(result.searchHints).toContain("二叉树 遍历");
+  });
+
+  test("resolves problem ids and urls before falling back to keyword search", async () => {
+    const calls: string[] = [];
+    const fakeFetch = async (url: string | URL | Request): Promise<Response> => {
+      calls.push(String(url));
+      return new Response(
+        JSON.stringify({
+          data: {
+            problem: {
+              pid: "P1305",
+              title: "新二叉树",
+              description: "tree",
+              inputFormat: "input",
+              outputFormat: "output",
+              samples: []
+            }
+          }
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+    };
+
+    const byId = await resolveProblemTool({ query: "p1305" }, fakeFetch as typeof fetch);
+    const byUrl = await resolveProblemTool({ query: "https://www.luogu.com.cn/problem/P1305" }, fakeFetch as typeof fetch);
+
+    expect(byId.id).toBe("P1305");
+    expect(byUrl.id).toBe("P1305");
+    expect(calls.every((url) => url.includes("/problem/P1305"))).toBe(true);
+  });
+
+  test("finds related problems by mixing recommendations and Luogu search", async () => {
+    const fakeFetch = async (): Promise<Response> =>
+      new Response(
+        JSON.stringify({
+          data: {
+            problems: {
+              count: 1,
+              result: [{ pid: "B3642", title: "二叉树的遍历", difficulty: 2, tags: [72] }]
+            }
+          }
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+
+    const result = await findRelatedProblemsTool(
+      { topic: "binary_tree", painPoint: "traversal_order_confusion", query: "二叉树 遍历", limit: 5 },
+      fakeFetch as typeof fetch
+    );
+
+    expect(result.items.map((item) => item.id)).toEqual(["P1305", "P1030", "P1827", "P1229", "B3642"]);
+    expect(result.searchHints).toContain("二叉树 遍历");
+  });
+
+  test("fetches public user profiles and reports route capabilities", async () => {
+    const fakeFetch = async (): Promise<Response> =>
+      new Response(
+        JSON.stringify({
+          data: {
+            user: {
+              uid: 1,
+              name: "kkksc03",
+              followingCount: 137,
+              followerCount: 49761,
+              ranking: 3916
+            },
+            gu: { rating: 217 }
+          }
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+
+    const profile = await getUserProfileTool({ uid: 1 }, fakeFetch as typeof fetch);
+    const capabilities = getCapabilitiesTool();
+
+    expect(profile.name).toBe("kkksc03");
+    expect(capabilities.tools.find((tool) => tool.name === "luogu_get_user_profile")?.status).toBe("available");
+    expect(capabilities.tools.find((tool) => tool.name === "luogu_get_recent_submissions")?.status).toBe("auth_required");
   });
 });

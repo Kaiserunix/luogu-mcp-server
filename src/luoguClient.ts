@@ -2,11 +2,12 @@ import {
   normalizeProblemPayload,
   normalizeProblemSearchPayload,
   normalizeProblemSetPayload,
-  normalizeProblemSetSearchPayload
+  normalizeProblemSetSearchPayload,
+  normalizeUserProfilePayload
 } from "./normalizers.js";
-import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, SearchResults } from "./types.js";
+import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, SearchResults, UserProfile } from "./types.js";
 
-const DEFAULT_USER_AGENT = "luogu-mcp-server/0.1";
+const DEFAULT_USER_AGENT = "luogu-mcp-server/0.2";
 
 export interface LuoguClientOptions {
   fetchImpl?: typeof fetch;
@@ -75,6 +76,18 @@ export class LuoguClient {
       "x-luogu-type": "content-only"
     });
     return normalizeProblemSetPayload(payload, normalizedId);
+  }
+
+  async fetchUserProfile(uid: number): Promise<UserProfile> {
+    const normalizedUid = normalizePositiveInteger(uid);
+    if (!normalizedUid) {
+      throw new Error("uid must be a positive integer.");
+    }
+
+    const payload = await this.getJson(`https://www.luogu.com.cn/user/${normalizedUid}?_contentOnly=1`, {
+      "x-lentille-request": "content-only"
+    });
+    return normalizeUserProfilePayload(payload);
   }
 
   private async getJson(url: string, headers: Record<string, string>): Promise<unknown> {

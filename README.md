@@ -1,6 +1,6 @@
 # luogu-mcp-server
 
-A small stdio MCP server for Luogu problem discovery. It exposes Luogu problem search, problem fetch, training set search, training set fetch, and seed recommendations for model-driven coding practice.
+A small stdio MCP server for Luogu problem discovery. It exposes a LeetCode-MCP-style Luogu route for problem search, problem fetch, URL/id resolution, related practice discovery, training set search, training set fetch, public user profiles, and explicit capability reporting.
 
 ## Why
 
@@ -12,9 +12,13 @@ This server is designed for AI tutoring and practice agents. The model can find 
 | --- | --- |
 | `luogu_search_problems` | Search Luogu problems by keyword, topic, title fragment, or problem id. |
 | `luogu_fetch_problem` | Fetch one Luogu problem statement, formats, samples, tags, difficulty, and URL by `pid`. |
+| `luogu_resolve_problem` | Resolve a Luogu URL, problem id, or title fragment, then fetch the problem. |
+| `luogu_find_related_problems` | Mix topic/pain-point recommendations with live keyword search to find related practice. |
 | `luogu_search_problem_sets` | Search Luogu training/problem sets by keyword. |
 | `luogu_fetch_problem_set` | Fetch one Luogu training/problem set and problem summaries by id. |
 | `luogu_recommend_problems` | Return seed recommendations from a topic or student pain point. |
+| `luogu_get_user_profile` | Fetch public Luogu user profile data by uid. |
+| `luogu_get_capabilities` | Report which LeetCode-style route features are available, auth-required, or planned. |
 
 All tools are read-only.
 
@@ -88,6 +92,42 @@ Recommend from a pain point:
   "limit": 3
 }
 ```
+
+Resolve a pasted URL:
+
+```json
+{
+  "query": "https://www.luogu.com.cn/problem/P1305",
+  "maxStatementChars": 5000
+}
+```
+
+Find related practice:
+
+```json
+{
+  "topic": "binary_tree",
+  "painPoint": "traversal_order_confusion",
+  "query": "二叉树 遍历",
+  "limit": 5
+}
+```
+
+Fetch a public user profile:
+
+```json
+{
+  "uid": 1
+}
+```
+
+## Luogu Route Parity
+
+This project mirrors the useful shape of richer LeetCode MCP servers while respecting what Luogu exposes publicly:
+
+- Available now: problem search, problem fetch, URL/id/title resolution, related problem discovery, training set search/fetch, public user profile fetch.
+- Auth-required in live probes: recent submissions, public solution pages, and discussion pages.
+- Planned but intentionally not enabled: solution submission/run-code tools. Those require authenticated session handling and explicit write-tool safety gates.
 
 ## Development
 
