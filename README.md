@@ -33,7 +33,28 @@ cmd /c npm install
 cmd /c npm run build
 ```
 
-## MCP Client Config
+## Use From npm
+
+The package is published on npm as [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server).
+
+```powershell
+npx -y luogu-mcp-server
+```
+
+For stdio MCP clients, use:
+
+```json
+{
+  "mcpServers": {
+    "luogu": {
+      "command": "npx",
+      "args": ["-y", "luogu-mcp-server"]
+    }
+  }
+}
+```
+
+## MCP Client Config From Source
 
 Use `node` directly as the stdio command:
 
@@ -51,14 +72,20 @@ Use `node` directly as the stdio command:
 }
 ```
 
-After publishing to npm, the intended config is:
+## Hosted Cloudflare Worker
+
+A public read-only Streamable HTTP deployment is available at:
+
+- Health: `https://luogu-mcp-server.lantangtang54.workers.dev/health`
+- MCP endpoint: `https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
+
+For Streamable HTTP MCP clients, use:
 
 ```json
 {
   "mcpServers": {
     "luogu": {
-      "command": "npx",
-      "args": ["-y", "luogu-mcp-server"]
+      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
     }
   }
 }
@@ -157,6 +184,40 @@ This project mirrors the useful shape of richer LeetCode MCP servers while respe
 cmd /c npm test
 cmd /c npm run build
 ```
+
+## Cloudflare Worker Deployment
+
+This package also includes a stateless Streamable HTTP MCP entrypoint for Cloudflare Workers.
+
+```powershell
+cmd /c npm test
+cmd /c npm run smoke:cf
+cmd /c npx wrangler login
+cmd /c npm run deploy:cf:dry
+cmd /c npm run deploy:cf
+```
+
+The Worker exposes the same read-only tools at `/mcp`, with a health endpoint at `/` or `/health`.
+
+```json
+{
+  "mcpServers": {
+    "luogu": {
+      "url": "https://<your-worker-name>.<your-workers-subdomain>.workers.dev/mcp"
+    }
+  }
+}
+```
+
+Verify a deployed Worker:
+
+```powershell
+cmd /c npm run smoke:cf -- https://<your-worker-name>.<your-workers-subdomain>.workers.dev
+```
+
+For private deployments, set `LUOGU_MCP_TOKEN` with `wrangler secret put` and configure your MCP client to send an `Authorization: Bearer <token>` header where supported. Browser `Origin` requests are rejected by default; set `LUOGU_MCP_ALLOWED_ORIGINS` to a comma-separated origin list if browser access is needed.
+
+See `docs/cloudflare-deployment.md` for the full release checklist.
 
 Run broad live checks against Luogu's current website responses:
 

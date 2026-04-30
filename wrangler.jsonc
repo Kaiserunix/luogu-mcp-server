@@ -1,0 +1,9 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler",
+  "name": "luogu-mcp-server",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-04-30",
+  "observability": {
+    "enabled": true
+  }
+}

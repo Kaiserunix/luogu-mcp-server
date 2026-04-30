@@ -25,7 +25,7 @@ export class LuoguClient {
   private readonly userAgent: string;
 
   constructor(options: LuoguClientOptions = {}) {
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? ((input, init) => fetch(input, init));
     this.userAgent = options.userAgent ?? DEFAULT_USER_AGENT;
   }
 

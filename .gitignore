@@ -1,6 +1,7 @@
 node_modules/
 dist/
 downloads/
+.wrangler/
 .env
 .DS_Store
 *.log

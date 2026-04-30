@@ -4,7 +4,7 @@
   "description": "A stdio MCP server for searching and fetching Luogu problems and training sets.",
   "type": "module",
   "bin": {
-    "luogu-mcp-server": "./dist/index.js"
+    "luogu-mcp-server": "dist/index.js"
   },
   "files": [
     "dist",
@@ -14,6 +14,10 @@
   "scripts": {
     "build": "tsc -p .",
     "start": "node dist/index.js",
+    "dev:cf": "npx wrangler dev",
+    "deploy:cf:dry": "npm run build && npx wrangler deploy --dry-run",
+    "deploy:cf": "npm run build && npx wrangler deploy",
+    "smoke:cf": "npm run build && node scripts/cloudflare-smoke.mjs",
     "smoke:live": "npm run build && node scripts/live-smoke.mjs",
     "smoke:topics": "npm run build && node scripts/topic-coverage-smoke.mjs",
     "smoke:mimo": "npm run build && node scripts/mimo-mcp-smoke.mjs",
@@ -32,7 +36,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kaiserunix/luogu-mcp-server.git"
+    "url": "git+https://github.com/kaiserunix/luogu-mcp-server.git"
   },
   "bugs": {
     "url": "https://github.com/kaiserunix/luogu-mcp-server/issues"
