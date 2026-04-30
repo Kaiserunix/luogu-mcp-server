@@ -59,17 +59,19 @@ export function recommendProblems(input: RecommendProblemsInput): RecommendProbl
   const painPoint = normalizeKey(input.painPoint);
   const currentProblemId = input.currentProblemId?.trim().toUpperCase();
   const limit = normalizeLimit(input.limit, 5, 10);
-  const selected = findBucket(topic) ?? findBucket(painPoint) ?? BUCKETS[0];
-  const items = selected.ids
-    .map((id) => PROBLEMS[id])
-    .filter((item): item is ProblemSummary => Boolean(item))
-    .filter((item) => item.id !== currentProblemId)
-    .slice(0, limit);
+  const selected = findBucket(topic) ?? findBucket(painPoint);
+  const items =
+    selected?.ids
+      .map((id) => PROBLEMS[id])
+      .filter((item): item is ProblemSummary => Boolean(item))
+      .filter((item) => item.id !== currentProblemId)
+      .slice(0, limit) ?? [];
+  const searchHints = selected?.hints ?? [input.topic, input.painPoint].filter((value): value is string => Boolean(value?.trim()));
 
   return {
     topic: input.topic,
     painPoint: input.painPoint,
-    searchHints: selected.hints,
+    searchHints,
     items
   };
 }

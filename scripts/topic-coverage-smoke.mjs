@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 
-const MIN_PROBLEM_HITS = Number(process.env.LUOGU_TOPIC_MIN_PROBLEM_HITS ?? 85);
+const MIN_PROBLEM_HITS = Number(process.env.LUOGU_TOPIC_MIN_PROBLEM_HITS ?? 98);
 const REQUEST_DELAY_MS = Number(process.env.LUOGU_TOPIC_DELAY_MS ?? 60);
 const PROBLEM_LIMIT = Number(process.env.LUOGU_TOPIC_PROBLEM_LIMIT ?? 5);
 const TRAINING_LIMIT = Number(process.env.LUOGU_TOPIC_TRAINING_LIMIT ?? 3);
@@ -179,23 +179,22 @@ function topic(name, ...args) {
 }
 
 async function searchProblemsForTopic(entry) {
-  const attempts = [];
-
-  for (const query of entry.queries) {
-    const args = { keyword: query, limit: PROBLEM_LIMIT };
-    if (entry.tagIds?.length) {
-      args.tagIds = entry.tagIds;
-    }
-
-    const response = await safeCallTool("luogu_search_problems", args);
-    attempts.push(summarizeAttempt(query, response));
-    if (!response.error && response.value?.total > 0) {
-      return summarizeHit(query, response.value);
-    }
+  const response = await safeCallTool("luogu_find_topic_problems", {
+    topic: entry.name,
+    limit: PROBLEM_LIMIT
+  });
+  if (!response.error && response.value?.items?.length > 0) {
+    return summarizeTopicHit(response.value);
   }
 
-  const firstError = attempts.find((attempt) => attempt.error)?.error;
-  return { hit: false, total: 0, first: null, attempts, error: firstError };
+  return {
+    hit: false,
+    query: entry.name,
+    total: 0,
+    first: null,
+    attempts: [summarizeAttempt(entry.name, response)],
+    error: response.error
+  };
 }
 
 async function searchTrainingsForTopic(entry) {
@@ -250,6 +249,18 @@ function summarizeHit(query, value) {
     first: firstItem ? `${firstItem.id} ${firstItem.title}` : null,
     taggedResults: Array.isArray(value.items) ? value.items.filter((item) => item.tags?.length > 0).length : 0,
     attempts: [{ query, total: value.total }]
+  };
+}
+
+function summarizeTopicHit(value) {
+  const firstItem = value.items?.[0];
+  return {
+    hit: true,
+    query: value.queriesTried?.join(" -> ") ?? value.topic,
+    total: value.items?.length ?? 0,
+    first: firstItem ? `${firstItem.id} ${firstItem.title}` : null,
+    taggedResults: Array.isArray(value.items) ? value.items.filter((item) => item.tags?.length > 0).length : 0,
+    attempts: Array.isArray(value.queriesTried) ? value.queriesTried.map((query) => ({ query, total: value.items?.length ?? 0 })) : []
   };
 }
 

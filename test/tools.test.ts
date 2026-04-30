@@ -181,6 +181,24 @@ describe("Luogu MCP tool handlers", () => {
     expect(result.searchHints).toContain("二叉树 遍历");
   });
 
+  test("finds related problems through topic alias fallback", async () => {
+    const fakeFetch = async (url: string | URL | Request): Promise<Response> => {
+      const href = String(url);
+      const rows = href.includes("keyword=%E5%B9%B3%E8%A1%A1%E6%A0%91")
+        ? [{ pid: "P3369", title: "【模板】普通平衡树", difficulty: 4, tags: [42] }]
+        : [];
+      return new Response(JSON.stringify({ data: { problems: { count: rows.length, result: rows } } }), {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      });
+    };
+
+    const result = await findRelatedProblemsTool({ topic: "Treap", limit: 3 }, fakeFetch as typeof fetch);
+
+    expect(result.searchHints).toContain("Treap");
+    expect(result.items.map((item) => item.id)).toContain("P3369");
+  });
+
   test("fetches public user profiles and reports route capabilities", async () => {
     const fakeFetch = async (): Promise<Response> =>
       new Response(

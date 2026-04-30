@@ -3,10 +3,12 @@ import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import {
   findRelatedProblemsTool,
+  findTopicProblemsTool,
   fetchProblemSetTool,
   fetchProblemTool,
   getCapabilitiesTool,
   getUserProfileTool,
+  listAlgorithmTopicsTool,
   recommendProblemsTool,
   resolveProblemTool,
   searchProblemSetsTool,
@@ -18,6 +20,8 @@ export const LUOGU_MCP_TOOL_NAMES = [
   "luogu_fetch_problem",
   "luogu_resolve_problem",
   "luogu_find_related_problems",
+  "luogu_list_algorithm_topics",
+  "luogu_find_topic_problems",
   "luogu_search_problem_sets",
   "luogu_fetch_problem_set",
   "luogu_recommend_problems",
@@ -103,6 +107,38 @@ export function createLuoguMcpServer(): McpServer {
       }
     },
     async (input) => toToolResult(await findRelatedProblemsTool(input))
+  );
+
+  server.registerTool(
+    "luogu_list_algorithm_topics",
+    {
+      title: "List Luogu Algorithm Topics",
+      description: "List canonical algorithm topics, aliases, and known Luogu tag ids used by the high-level topic search route.",
+      inputSchema: {},
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: false
+      }
+    },
+    async () => toToolResult(listAlgorithmTopicsTool())
+  );
+
+  server.registerTool(
+    "luogu_find_topic_problems",
+    {
+      title: "Find Luogu Topic Problems",
+      description: "Find Luogu practice problems for an algorithm topic using aliases, known Luogu tag ids, deduplication, and match reasons.",
+      inputSchema: {
+        topic: z.string().min(1).describe("Algorithm topic or alias, such as SPFA, Prim, Treap, 二叉树, or 动态规划."),
+        limit: z.number().int().min(1).max(30).optional().describe("Maximum returned items."),
+        excludeProblemIds: z.array(z.string().min(1)).max(100).optional().describe("Luogu problem ids to exclude from recommendations.")
+      },
+      annotations: {
+        readOnlyHint: true,
+        openWorldHint: true
+      }
+    },
+    async (input) => toToolResult(await findTopicProblemsTool(input))
   );
 
   server.registerTool(

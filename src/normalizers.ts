@@ -20,8 +20,17 @@ interface ProblemPayload {
       outputFormat?: unknown;
       samples?: unknown;
       hint?: unknown;
+      content?: ProblemContentPayload;
+      contenu?: ProblemContentPayload;
     };
   };
+}
+
+interface ProblemContentPayload {
+  description?: unknown;
+  formatI?: unknown;
+  formatO?: unknown;
+  hint?: unknown;
 }
 
 interface ProblemSearchPayload {
@@ -93,11 +102,11 @@ export function normalizeProblemPayload(payload: unknown): ProblemRecord {
     sourceUrl: problemUrl(problem.pid),
     difficulty: asOptionalNumber(problem.difficulty),
     tags: normalizeTags(problem.tags),
-    statement: asString(problem.description),
-    inputFormat: asString(problem.inputFormat),
-    outputFormat: asString(problem.outputFormat),
+    statement: asString(problem.description) || asString(problem.content?.description) || asString(problem.contenu?.description),
+    inputFormat: asString(problem.inputFormat) || asString(problem.content?.formatI) || asString(problem.contenu?.formatI),
+    outputFormat: asString(problem.outputFormat) || asString(problem.content?.formatO) || asString(problem.contenu?.formatO),
     samples: normalizeSamples(problem.samples),
-    hint: asString(problem.hint)
+    hint: asString(problem.hint) || asString(problem.content?.hint) || asString(problem.contenu?.hint)
   };
 }
 

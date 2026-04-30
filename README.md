@@ -14,6 +14,8 @@ This server is designed for AI tutoring and practice agents. The model can find 
 | `luogu_fetch_problem` | Fetch one Luogu problem statement, formats, samples, tags, difficulty, and URL by `pid`. |
 | `luogu_resolve_problem` | Resolve a Luogu URL, problem id, or title fragment, then fetch the problem. |
 | `luogu_find_related_problems` | Mix topic/pain-point recommendations with live keyword search to find related practice. |
+| `luogu_list_algorithm_topics` | List canonical algorithm topics, aliases, and known tag ids. |
+| `luogu_find_topic_problems` | Find topic practice problems using aliases, tag ids, deduplication, and match reasons. |
 | `luogu_search_problem_sets` | Search Luogu training/problem sets by keyword. |
 | `luogu_fetch_problem_set` | Fetch one Luogu training/problem set and problem summaries by id. |
 | `luogu_recommend_problems` | Return seed recommendations from a topic or student pain point. |
@@ -123,6 +125,16 @@ Find related practice:
 }
 ```
 
+Find topic practice with alias expansion:
+
+```json
+{
+  "topic": "Treap",
+  "limit": 5,
+  "excludeProblemIds": ["P3369"]
+}
+```
+
 Fetch a public user profile:
 
 ```json
@@ -160,7 +172,21 @@ Run the 100-topic algorithm coverage smoke:
 cmd /c npm run smoke:topics
 ```
 
-The topic smoke starts the real MCP server and probes 100 algorithm categories across problem search and training-set search. It fails if fewer than 85 problem-topic searches return Luogu results.
+The topic smoke starts the real MCP server and probes 100 algorithm categories across high-level topic search and training-set search. It fails if fewer than 98 topic searches return Luogu results.
+
+Download one representative problem per catalog topic into a local ignored folder:
+
+```powershell
+cmd /c npm run download:topics
+```
+
+Test a MiMo agent loop that asks the model to choose MCP tools, then executes those calls through the local stdio MCP server:
+
+```powershell
+cmd /c npm run smoke:mimo
+```
+
+`smoke:mimo` reads `MIMO_API_KEY` from the environment, or from `C:\Users\qwerf\.continue\.env` on this machine.
 
 ## Notes
 

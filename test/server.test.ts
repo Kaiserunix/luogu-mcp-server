@@ -8,6 +8,8 @@ describe("Luogu MCP server", () => {
       "luogu_fetch_problem",
       "luogu_resolve_problem",
       "luogu_find_related_problems",
+      "luogu_list_algorithm_topics",
+      "luogu_find_topic_problems",
       "luogu_search_problem_sets",
       "luogu_fetch_problem_set",
       "luogu_recommend_problems",

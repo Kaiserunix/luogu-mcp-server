@@ -1,5 +1,7 @@
 import { LuoguClient } from "./luoguClient.js";
 import { recommendProblems, type RecommendProblemsInput } from "./recommendations.js";
+import { listAlgorithmTopics } from "./topicCatalog.js";
+import { findTopicProblems, type FindTopicProblemsInput, type FindTopicProblemsResult } from "./topicSearch.js";
 import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, UserProfile } from "./types.js";
 
 export interface SearchProblemsInput {
@@ -159,11 +161,45 @@ export function recommendProblemsTool(input: RecommendProblemsInput) {
   return recommendProblems(input);
 }
 
+export async function findTopicProblemsTool(input: FindTopicProblemsInput, fetchImpl?: typeof fetch): Promise<FindTopicProblemsResult> {
+  return findTopicProblems(input, fetchImpl);
+}
+
+export function listAlgorithmTopicsTool() {
+  return {
+    platform: "luogu",
+    items: listAlgorithmTopics()
+  };
+}
+
 export async function findRelatedProblemsTool(input: FindRelatedProblemsInput, fetchImpl?: typeof fetch): Promise<FindRelatedProblemsResult> {
   const limit = normalizeLimit(input.limit, 5, 20);
   const recommendations = recommendProblems({ ...input, limit });
   const items = [...recommendations.items];
   const hints = [...recommendations.searchHints];
+  if (input.topic && !hints.includes(input.topic)) {
+    hints.push(input.topic);
+  }
+
+  if (items.length < limit && input.topic) {
+    const topicResult = await findTopicProblemsTool(
+      {
+        topic: input.topic,
+        limit,
+        excludeProblemIds: [input.currentProblemId, ...items.map((item) => item.id)].filter((id): id is string => Boolean(id))
+      },
+      fetchImpl
+    );
+    for (const item of topicResult.items) {
+      if (!items.some((existing) => existing.id === item.id)) {
+        items.push(item);
+      }
+      if (items.length >= limit) {
+        break;
+      }
+    }
+  }
+
   const searchQuery = input.query ?? hints[0] ?? input.pid;
 
   if (items.length < limit && searchQuery) {

@@ -36,6 +36,29 @@ describe("Luogu payload normalizers", () => {
     expect(problem.samples).toEqual([{ input: "abc", output: "abc" }]);
   });
 
+  test("normalizes current Luogu content fields", () => {
+    const problem = normalizeProblemPayload({
+      data: {
+        problem: {
+          pid: "P3369",
+          title: "【模板】普通平衡树",
+          content: {
+            description: "Maintain a multiset.",
+            formatI: "Input operations.",
+            formatO: "Output answers.",
+            hint: "Balanced tree."
+          },
+          samples: [{ input: "1 1", output: "1" }]
+        }
+      }
+    });
+
+    expect(problem.statement).toBe("Maintain a multiset.");
+    expect(problem.inputFormat).toBe("Input operations.");
+    expect(problem.outputFormat).toBe("Output answers.");
+    expect(problem.hint).toBe("Balanced tree.");
+  });
+
   test("normalizes problem search results", () => {
     const results = normalizeProblemSearchPayload({
       data: {

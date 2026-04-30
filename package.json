@@ -16,6 +16,8 @@
     "start": "node dist/index.js",
     "smoke:live": "npm run build && node scripts/live-smoke.mjs",
     "smoke:topics": "npm run build && node scripts/topic-coverage-smoke.mjs",
+    "smoke:mimo": "npm run build && node scripts/mimo-mcp-smoke.mjs",
+    "download:topics": "npm run build && node scripts/download-topic-problems.mjs",
     "test": "vitest run",
     "prepublishOnly": "npm run build && npm test"
   },
