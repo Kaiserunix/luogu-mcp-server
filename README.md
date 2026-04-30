@@ -136,8 +136,17 @@ cmd /c npm test
 cmd /c npm run build
 ```
 
+Run broad live checks against Luogu's current website responses:
+
+```powershell
+cmd /c npm run smoke:live
+```
+
+The live smoke starts the MCP server through a real stdio client, then compares problem fetches, problem searches, training searches, training fetches, URL/id resolution, related recommendations, public user profiles, and route capabilities against Luogu content-only page responses. It is intentionally separate from unit tests because it depends on Luogu network availability and current site behavior.
+
 ## Notes
 
 - Luogu endpoints used here are content-only web endpoints, not a formal stability contract.
 - The server keeps outputs compact and structured for model context control.
 - Browser automation is intentionally not the default path. A Playwright fallback can be added later for pages that cannot be read through lightweight HTTP.
+- For broad topic discovery, Luogu training-set search is often cleaner than raw problem title search; raw keyword search follows Luogu's website ordering and can include title-level noise.
