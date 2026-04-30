@@ -17,6 +17,7 @@ export interface LuoguClientOptions {
 export interface SearchOptions {
   keyword: string;
   page?: number;
+  tagIds?: number[];
 }
 
 export class LuoguClient {
@@ -37,6 +38,9 @@ export class LuoguClient {
     const page = normalizePositiveInteger(options.page);
     if (page) {
       params.set("page", String(page));
+    }
+    for (const tagId of normalizePositiveIntegers(options.tagIds)) {
+      params.append("tag", String(tagId));
     }
 
     const payload = await this.getJson(`https://www.luogu.com.cn/problem/list?${params.toString()}`, {
@@ -120,4 +124,12 @@ function normalizePositiveInteger(value: number | undefined): number | undefined
   }
 
   return Math.max(1, Math.floor(value));
+}
+
+function normalizePositiveIntegers(values: number[] | undefined): number[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+
+  return [...new Set(values.map(normalizePositiveInteger).filter((value): value is number => typeof value === "number"))];
 }

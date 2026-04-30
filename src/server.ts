@@ -39,7 +39,8 @@ export function createLuoguMcpServer(): McpServer {
       inputSchema: {
         keyword: z.string().min(1).describe("Keyword, topic, title fragment, or problem id."),
         page: z.number().int().min(1).optional().describe("Luogu list page, starting from 1."),
-        limit: z.number().int().min(1).max(30).optional().describe("Maximum returned items.")
+        limit: z.number().int().min(1).max(30).optional().describe("Maximum returned items."),
+        tagIds: z.array(z.number().int().min(1)).max(20).optional().describe("Optional Luogu tag ids to narrow topic search, such as [11] for tree-related searches.")
       },
       annotations: {
         readOnlyHint: true,

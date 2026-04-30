@@ -10,7 +10,7 @@ This server is designed for AI tutoring and practice agents. The model can find 
 
 | Tool | Purpose |
 | --- | --- |
-| `luogu_search_problems` | Search Luogu problems by keyword, topic, title fragment, or problem id. |
+| `luogu_search_problems` | Search Luogu problems by keyword, topic, title fragment, problem id, and optional Luogu tag ids. |
 | `luogu_fetch_problem` | Fetch one Luogu problem statement, formats, samples, tags, difficulty, and URL by `pid`. |
 | `luogu_resolve_problem` | Resolve a Luogu URL, problem id, or title fragment, then fetch the problem. |
 | `luogu_find_related_problems` | Mix topic/pain-point recommendations with live keyword search to find related practice. |
@@ -70,6 +70,16 @@ Search problems:
 {
   "keyword": "二叉树",
   "page": 1,
+  "limit": 5
+}
+```
+
+Search problems with a Luogu tag filter:
+
+```json
+{
+  "keyword": "二叉树",
+  "tagIds": [11],
   "limit": 5
 }
 ```
@@ -143,6 +153,14 @@ cmd /c npm run smoke:live
 ```
 
 The live smoke starts the MCP server through a real stdio client, then compares problem fetches, problem searches, training searches, training fetches, URL/id resolution, related recommendations, public user profiles, and route capabilities against Luogu content-only page responses. It is intentionally separate from unit tests because it depends on Luogu network availability and current site behavior.
+
+Run the 100-topic algorithm coverage smoke:
+
+```powershell
+cmd /c npm run smoke:topics
+```
+
+The topic smoke starts the real MCP server and probes 100 algorithm categories across problem search and training-set search. It fails if fewer than 85 problem-topic searches return Luogu results.
 
 ## Notes
 

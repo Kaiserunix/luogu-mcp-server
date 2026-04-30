@@ -39,6 +39,31 @@ describe("Luogu MCP tool handlers", () => {
     expect(result.items[0].id).toBe("P1305");
   });
 
+  test("searches problems with Luogu tag filters", async () => {
+    const calls: Array<{ url: string; init?: RequestInit }> = [];
+    const fakeFetch = async (url: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      calls.push({ url: String(url), init });
+      return new Response(
+        JSON.stringify({
+          data: {
+            problems: {
+              count: 1,
+              result: [{ pid: "P4913", title: "二叉树深度", difficulty: 1, tags: [11] }]
+            }
+          }
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+    };
+
+    const result = await searchProblemsTool({ keyword: "二叉树", tagIds: [11], limit: 5 }, fakeFetch as typeof fetch);
+    const url = new URL(calls[0].url);
+
+    expect(url.searchParams.get("keyword")).toBe("二叉树");
+    expect(url.searchParams.getAll("tag")).toEqual(["11"]);
+    expect(result.items[0].tags).toEqual(["11"]);
+  });
+
   test("fetches and trims a problem statement", async () => {
     const fakeFetch = async (): Promise<Response> =>
       new Response(

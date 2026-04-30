@@ -6,6 +6,7 @@ export interface SearchProblemsInput {
   keyword: string;
   page?: number;
   limit?: number;
+  tagIds?: number[];
 }
 
 export interface SearchProblemsResult {
@@ -86,7 +87,7 @@ export async function searchProblemsTool(input: SearchProblemsInput, fetchImpl?:
   const keyword = requireNonEmpty(input.keyword, "keyword");
   const page = normalizePage(input.page);
   const limit = normalizeLimit(input.limit, 8, 30);
-  const results = await new LuoguClient({ fetchImpl }).searchProblems({ keyword, page });
+  const results = await new LuoguClient({ fetchImpl }).searchProblems({ keyword, page, tagIds: input.tagIds });
 
   return {
     platform: "luogu",

@@ -15,6 +15,7 @@
     "build": "tsc -p .",
     "start": "node dist/index.js",
     "smoke:live": "npm run build && node scripts/live-smoke.mjs",
+    "smoke:topics": "npm run build && node scripts/topic-coverage-smoke.mjs",
     "test": "vitest run",
     "prepublishOnly": "npm run build && npm test"
   },
