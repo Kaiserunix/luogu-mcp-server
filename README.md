@@ -1,5 +1,7 @@
 # luogu-mcp-server
 
+[中文文档](README.zh-CN.md)
+
 A small stdio MCP server for Luogu problem discovery. It exposes a LeetCode-MCP-style Luogu route for problem search, problem fetch, URL/id resolution, related practice discovery, training set search, training set fetch, public user profiles, and explicit capability reporting.
 
 ## Why
