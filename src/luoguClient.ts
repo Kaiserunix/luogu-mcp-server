@@ -8,6 +8,7 @@ import {
 import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, SearchResults, UserProfile } from "./types.js";
 
 const DEFAULT_USER_AGENT = "luogu-mcp-server/0.2";
+const RETRY_DELAYS_MS = [250, 750];
 
 export interface LuoguClientOptions {
   fetchImpl?: typeof fetch;
@@ -60,8 +61,7 @@ export class LuoguClient {
   async searchProblemSets(options: SearchOptions): Promise<SearchResults<ProblemSetSummary>> {
     const keyword = requireNonEmpty(options.keyword, "keyword");
     const params = new URLSearchParams({
-      keyword,
-      _contentOnly: "1"
+      keyword
     });
     const page = normalizePositiveInteger(options.page);
     if (page) {
@@ -69,15 +69,15 @@ export class LuoguClient {
     }
 
     const payload = await this.getJson(`https://www.luogu.com.cn/training/list?${params.toString()}`, {
-      "x-luogu-type": "content-only"
+      "x-lentille-request": "content-only"
     });
     return normalizeProblemSetSearchPayload(payload);
   }
 
   async fetchProblemSet(id: string): Promise<ProblemSetRecord> {
     const normalizedId = requireNonEmpty(id, "id");
-    const payload = await this.getJson(`https://www.luogu.com.cn/training/${encodeURIComponent(normalizedId)}?_contentOnly=1`, {
-      "x-luogu-type": "content-only"
+    const payload = await this.getJson(`https://www.luogu.com.cn/training/${encodeURIComponent(normalizedId)}`, {
+      "x-lentille-request": "content-only"
     });
     return normalizeProblemSetPayload(payload, normalizedId);
   }
@@ -95,18 +95,39 @@ export class LuoguClient {
   }
 
   private async getJson(url: string, headers: Record<string, string>): Promise<unknown> {
-    const response = await this.fetchImpl(url, {
-      headers: {
-        "user-agent": this.userAgent,
-        ...headers
-      }
-    });
+    let lastError: unknown;
+    for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+      try {
+        const response = await this.fetchImpl(url, {
+          headers: {
+            accept: "application/json, text/plain, */*",
+            referer: "https://www.luogu.com.cn/",
+            "user-agent": this.userAgent,
+            ...headers
+          }
+        });
 
-    if (!response.ok) {
-      throw new Error(`Luogu request failed: HTTP ${response.status} for ${url}`);
+        if (!response.ok) {
+          const error = new Error(`Luogu request failed: HTTP ${response.status} for ${url}`);
+          if (isTransientStatus(response.status) && attempt < RETRY_DELAYS_MS.length) {
+            lastError = error;
+            await delay(RETRY_DELAYS_MS[attempt]);
+            continue;
+          }
+          throw error;
+        }
+
+        return response.json();
+      } catch (error) {
+        lastError = error;
+        if (attempt >= RETRY_DELAYS_MS.length || !isTransientError(error)) {
+          throw error;
+        }
+        await delay(RETRY_DELAYS_MS[attempt]);
+      }
     }
 
-    return response.json();
+    throw lastError instanceof Error ? lastError : new Error(`Luogu request failed for ${url}`);
   }
 }
 
@@ -132,4 +153,20 @@ function normalizePositiveIntegers(values: number[] | undefined): number[] {
   }
 
   return [...new Set(values.map(normalizePositiveInteger).filter((value): value is number => typeof value === "number"))];
+}
+
+function isTransientStatus(status: number): boolean {
+  return status === 408 || status === 429 || (status >= 500 && status <= 599);
+}
+
+function isTransientError(error: unknown): boolean {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return error.message === "fetch failed" || error.name === "AbortError";
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

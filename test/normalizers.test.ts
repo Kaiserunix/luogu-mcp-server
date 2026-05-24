@@ -41,8 +41,10 @@ describe("Luogu payload normalizers", () => {
       data: {
         problem: {
           pid: "P3369",
-          title: "【模板】普通平衡树",
+          name: "【模板】普通平衡树",
           content: {
+            name: "【模板】普通平衡树",
+            background: "You need a multiset.",
             description: "Maintain a multiset.",
             formatI: "Input operations.",
             formatO: "Output answers.",
@@ -53,7 +55,8 @@ describe("Luogu payload normalizers", () => {
       }
     });
 
-    expect(problem.statement).toBe("Maintain a multiset.");
+    expect(problem.title).toBe("【模板】普通平衡树");
+    expect(problem.statement).toBe("You need a multiset.\n\nMaintain a multiset.");
     expect(problem.inputFormat).toBe("Input operations.");
     expect(problem.outputFormat).toBe("Output answers.");
     expect(problem.hint).toBe("Balanced tree.");
@@ -64,7 +67,7 @@ describe("Luogu payload normalizers", () => {
       data: {
         problems: {
           count: 1,
-          result: [{ pid: "P1030", title: "求先序排列", difficulty: 2, tags: [72] }]
+          result: [{ pid: "P1030", name: "求先序排列", difficulty: 2, tags: [72] }]
         }
       }
     });
@@ -77,6 +80,40 @@ describe("Luogu payload normalizers", () => {
       difficulty: 2,
       tags: ["72"],
       sourceUrl: "https://www.luogu.com.cn/problem/P1030"
+    });
+  });
+
+  test("normalizes current Luogu problem payloads that use name instead of title", () => {
+    const detail = normalizeProblemPayload({
+      data: {
+        problem: {
+          pid: "P1001",
+          name: "A+B Problem",
+          contenu: {
+            background: "Contest output has no prompts.",
+            description: "Input two integers and output the sum.",
+            formatI: "Two integers.",
+            formatO: "One integer."
+          },
+          samples: [["1 2\n", "3\n"]]
+        }
+      }
+    });
+    const search = normalizeProblemSearchPayload({
+      data: {
+        problems: {
+          count: 1,
+          result: [{ pid: "P1001", name: "A+B Problem", difficulty: 1, tags: [1] }]
+        }
+      }
+    });
+
+    expect(detail.title).toBe("A+B Problem");
+    expect(detail.statement).toContain("Contest output");
+    expect(search.items[0]).toMatchObject({
+      id: "P1001",
+      title: "A+B Problem",
+      difficulty: 1
     });
   });
 
@@ -106,6 +143,44 @@ describe("Luogu payload normalizers", () => {
 
     expect(search.items[0].sourceUrl).toBe("https://www.luogu.com.cn/training/100");
     expect(detail.problems[0].id).toBe("P1001");
+  });
+
+  test("normalizes current Lentille training payloads", () => {
+    const search = normalizeProblemSetSearchPayload({
+      data: {
+        trainings: {
+          count: 1,
+          result: [{ id: 100, name: "【入门1】顺序结构", problemCount: 15 }]
+        }
+      }
+    });
+    const detail = normalizeProblemSetPayload(
+      {
+        data: {
+          training: {
+            id: 100,
+            name: "【入门1】顺序结构",
+            description: "Starter",
+            problemCount: 1,
+            problems: [{ pid: "B2002", name: "Hello,World!", difficulty: 1, tags: [353] }]
+          }
+        }
+      },
+      "100"
+    );
+
+    expect(search.total).toBe(1);
+    expect(search.items[0]).toMatchObject({
+      id: "100",
+      title: "【入门1】顺序结构",
+      problemCount: 15
+    });
+    expect(detail.title).toBe("【入门1】顺序结构");
+    expect(detail.problems[0]).toMatchObject({
+      id: "B2002",
+      title: "Hello,World!",
+      tags: ["353"]
+    });
   });
 
   test("normalizes a public user profile", () => {

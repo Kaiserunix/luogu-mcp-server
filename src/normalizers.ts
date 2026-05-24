@@ -13,6 +13,7 @@ interface ProblemPayload {
     problem?: {
       pid?: unknown;
       title?: unknown;
+      name?: unknown;
       difficulty?: unknown;
       tags?: unknown;
       description?: unknown;
@@ -27,6 +28,8 @@ interface ProblemPayload {
 }
 
 interface ProblemContentPayload {
+  name?: unknown;
+  background?: unknown;
   description?: unknown;
   formatI?: unknown;
   formatO?: unknown;
@@ -43,6 +46,12 @@ interface ProblemSearchPayload {
 }
 
 interface ProblemSetSearchPayload {
+  data?: {
+    trainings?: {
+      count?: unknown;
+      result?: unknown;
+    };
+  };
   currentData?: {
     trainings?: {
       count?: unknown;
@@ -52,6 +61,16 @@ interface ProblemSetSearchPayload {
 }
 
 interface ProblemSetPayload {
+  data?: {
+    training?: {
+      id?: unknown;
+      title?: unknown;
+      name?: unknown;
+      description?: unknown;
+      problemCount?: unknown;
+      problems?: unknown;
+    };
+  };
   currentData?: {
     training?: {
       id?: unknown;
@@ -91,18 +110,22 @@ interface UserProfilePayload {
 export function normalizeProblemPayload(payload: unknown): ProblemRecord {
   const source = payload as ProblemPayload;
   const problem = source.data?.problem;
-  if (!problem || typeof problem.pid !== "string" || typeof problem.title !== "string") {
+  const title = asString(problem?.title) || asString(problem?.name) || asString(problem?.content?.name) || asString(problem?.contenu?.name);
+  if (!problem || typeof problem.pid !== "string" || !title) {
     throw new Error("Luogu response did not include a usable problem payload.");
   }
 
   return {
     platform: "luogu",
     id: problem.pid,
-    title: problem.title,
+    title,
     sourceUrl: problemUrl(problem.pid),
     difficulty: asOptionalNumber(problem.difficulty),
     tags: normalizeTags(problem.tags),
-    statement: asString(problem.description) || asString(problem.content?.description) || asString(problem.contenu?.description),
+    statement:
+      joinProblemSections(asString(problem.content?.background), asString(problem.content?.description)) ||
+      joinProblemSections(asString(problem.contenu?.background), asString(problem.contenu?.description)) ||
+      asString(problem.description),
     inputFormat: asString(problem.inputFormat) || asString(problem.content?.formatI) || asString(problem.contenu?.formatI),
     outputFormat: asString(problem.outputFormat) || asString(problem.content?.formatO) || asString(problem.contenu?.formatO),
     samples: normalizeSamples(problem.samples),
@@ -121,14 +144,15 @@ export function normalizeProblemSearchPayload(payload: unknown): SearchResults<P
           }
 
           const record = item as Record<string, unknown>;
-          if (typeof record.pid !== "string" || typeof record.title !== "string") {
+          const title = typeof record.title === "string" ? record.title : typeof record.name === "string" ? record.name : "";
+          if (typeof record.pid !== "string" || !title) {
             return undefined;
           }
 
           return {
             platform: "luogu",
             id: record.pid,
-            title: record.title,
+            title,
             sourceUrl: problemUrl(record.pid),
             difficulty: asOptionalNumber(record.difficulty),
             tags: normalizeTags(record.tags)
@@ -145,7 +169,8 @@ export function normalizeProblemSearchPayload(payload: unknown): SearchResults<P
 
 export function normalizeProblemSetSearchPayload(payload: unknown): SearchResults<ProblemSetSummary> {
   const source = payload as ProblemSetSearchPayload;
-  const rawItems = source.currentData?.trainings?.result;
+  const trainings = source.data?.trainings ?? source.currentData?.trainings;
+  const rawItems = trainings?.result;
   const items = Array.isArray(rawItems)
     ? rawItems
         .map((item): ProblemSetSummary | undefined => {
@@ -171,14 +196,14 @@ export function normalizeProblemSetSearchPayload(payload: unknown): SearchResult
     : [];
 
   return {
-    total: asCount(source.currentData?.trainings?.count, items.length),
+    total: asCount(trainings?.count, items.length),
     items
   };
 }
 
 export function normalizeProblemSetPayload(payload: unknown, idHint: string): ProblemSetRecord {
   const source = payload as ProblemSetPayload;
-  const training = source.currentData?.training;
+  const training = source.data?.training ?? source.currentData?.training;
   if (!training) {
     throw new Error("Luogu response did not include a usable problem set payload.");
   }
@@ -232,20 +257,24 @@ function normalizeProblemSetProblems(value: unknown): ProblemSummary[] {
 
   return value
     .map((item): ProblemSummary | undefined => {
-      const problem = item && typeof item === "object" ? (item as Record<string, unknown>).problem : undefined;
+      const problem =
+        item && typeof item === "object" && "problem" in item && (item as Record<string, unknown>).problem
+          ? (item as Record<string, unknown>).problem
+          : item;
       if (!problem || typeof problem !== "object") {
         return undefined;
       }
 
       const record = problem as Record<string, unknown>;
-      if (typeof record.pid !== "string" || typeof record.title !== "string") {
+      const title = typeof record.title === "string" ? record.title : typeof record.name === "string" ? record.name : "";
+      if (typeof record.pid !== "string" || !title) {
         return undefined;
       }
 
       return {
         platform: "luogu",
         id: record.pid,
-        title: record.title,
+        title,
         sourceUrl: problemUrl(record.pid),
         difficulty: asOptionalNumber(record.difficulty),
         tags: normalizeTags(record.tags)
@@ -310,6 +339,13 @@ function normalizeScoreRecord(value: unknown): Record<string, number> | undefine
 
 function asCount(value: unknown, fallback: number): number {
   return typeof value === "number" ? value : fallback;
+}
+
+function joinProblemSections(...sections: string[]): string {
+  return sections
+    .map((section) => section.trim())
+    .filter((section) => section.length > 0)
+    .join("\n\n");
 }
 
 function problemUrl(pid: string): string {

@@ -188,7 +188,7 @@ async function fetchProblemFromWeb(pid) {
   const problem = payload.data?.problem;
   return {
     id: problem?.pid,
-    title: problem?.title,
+    title: problem?.title ?? problem?.name ?? problem?.contenu?.name,
     sampleCount: Array.isArray(problem?.samples) ? problem.samples.length : 0
   };
 }
@@ -207,11 +207,11 @@ async function searchProblemsOnWeb(keyword) {
 }
 
 async function searchTrainingsOnWeb(keyword) {
-  const params = new URLSearchParams({ keyword, _contentOnly: "1" });
+  const params = new URLSearchParams({ keyword });
   const payload = await fetchJson(`https://www.luogu.com.cn/training/list?${params.toString()}`, {
-    "x-luogu-type": "content-only"
+    "x-lentille-request": "content-only"
   });
-  const trainings = payload.currentData?.trainings;
+  const trainings = payload.data?.trainings ?? payload.currentData?.trainings;
   const rows = Array.isArray(trainings?.result) ? trainings.result : [];
   return {
     total: trainings?.count ?? rows.length,
@@ -220,11 +220,12 @@ async function searchTrainingsOnWeb(keyword) {
 }
 
 async function fetchTrainingFromWeb(id) {
-  const payload = await fetchJson(`https://www.luogu.com.cn/training/${encodeURIComponent(id)}?_contentOnly=1`, {
-    "x-luogu-type": "content-only"
+  const payload = await fetchJson(`https://www.luogu.com.cn/training/${encodeURIComponent(id)}`, {
+    "x-lentille-request": "content-only"
   });
-  const training = payload.currentData?.training;
-  const first = Array.isArray(training?.problems) ? training.problems[0]?.problem : undefined;
+  const training = payload.data?.training ?? payload.currentData?.training;
+  const firstRow = Array.isArray(training?.problems) ? training.problems[0] : undefined;
+  const first = firstRow?.problem ?? firstRow;
   return {
     id: String(training?.id ?? id),
     title: training?.title ?? training?.name,
@@ -244,6 +245,8 @@ async function fetchUserFromWeb(uid) {
 async function fetchJson(url, headers) {
   const response = await fetch(url, {
     headers: {
+      accept: "application/json, text/plain, */*",
+      referer: "https://www.luogu.com.cn/",
       "user-agent": "luogu-mcp-live-smoke/0.1",
       ...headers
     }
