@@ -118,6 +118,52 @@ describe("Luogu MCP tool handlers", () => {
     expect((await fetchProblemSetTool({ id: "100", limit: 1 }, fakeFetch as typeof fetch)).problems[0].id).toBe("P1001");
   });
 
+  test("searches official and selected training sets with client-side official filtering", async () => {
+    const calls: string[] = [];
+    const dynamicProgramming = "\u52a8\u6001\u89c4\u5212";
+    const fakeFetch = async (url: string | URL | Request): Promise<Response> => {
+      const href = String(url);
+      calls.push(href);
+      const type = new URL(href).searchParams.get("type");
+      const result =
+        type === "select"
+          ? [{ id: 1060, name: `selected ${dynamicProgramming} collection`, problemCount: 20 }]
+          : [
+              { id: 100, name: "intro sequence", problemCount: 15 },
+              { id: 211, name: `official ${dynamicProgramming}`, problemCount: 18 }
+            ];
+
+      return new Response(JSON.stringify({ data: { trainings: { count: result.length, result } } }), {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      });
+    };
+
+    const result = await searchProblemSetsTool({ keyword: dynamicProgramming, limit: 5 }, fakeFetch as typeof fetch);
+
+    expect(result.items.map((item) => item.id)).toEqual(["211", "1060"]);
+    expect(calls.some((url) => url.includes("type=official"))).toBe(true);
+    expect(calls.some((url) => url.includes("type=select"))).toBe(true);
+  });
+
+  test("can restrict training set search to selected user-shared sets", async () => {
+    const calls: string[] = [];
+    const fakeFetch = async (url: string | URL | Request): Promise<Response> => {
+      const href = String(url);
+      calls.push(href);
+      return new Response(
+        JSON.stringify({ data: { trainings: { count: 1, result: [{ id: 1230, name: "network flow classics", problemCount: 24 }] } } }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+    };
+
+    const result = await searchProblemSetsTool({ keyword: "network flow", type: "select" }, fakeFetch as typeof fetch);
+
+    expect(result.items.map((item) => item.id)).toEqual(["1230"]);
+    expect(calls).toHaveLength(1);
+    expect(calls[0]).toContain("type=select");
+  });
+
   test("recommends from topic and pain point hints", () => {
     const result = recommendProblemsTool({
       topic: "binary_tree",

@@ -4,23 +4,41 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const PROBLEM_CASES = [
   ["P1001", "A+B Problem"],
-  ["P1305", "新二叉树"],
+  ["P1305", "\u65b0\u4e8c\u53c9\u6811"],
   ["P1205", "Transformations"],
-  ["P1319", "压缩技术"],
-  ["P1320", "压缩技术"],
-  ["P4715", "淘汰赛"],
-  ["P4913", "二叉树深度"],
-  ["P1030", "求先序排列"],
-  ["P1364", "医院设置"]
+  ["P1319", "\u538b\u7f29\u6280\u672f"],
+  ["P1320", "\u538b\u7f29\u6280\u672f"],
+  ["P4715", "\u6dd8\u6c70\u8d5b"],
+  ["P4913", "\u4e8c\u53c9\u6811\u6df1\u5ea6"],
+  ["P1030", "\u6c42\u5148\u5e8f\u6392\u5217"],
+  ["P1364", "\u533b\u9662\u8bbe\u7f6e"]
 ];
 
-const PROBLEM_SEARCH_QUERIES = ["二叉树", "动态规划", "最短路", "前缀和", "压缩技术", "矩阵", "幻方", "彩票", "医院设置", "淘汰赛"];
-const TRAINING_SEARCH_QUERIES = ["入门", "二叉树", "动态规划", "图论", "最短路"];
+const PROBLEM_SEARCH_QUERIES = [
+  "\u4e8c\u53c9\u6811",
+  "\u52a8\u6001\u89c4\u5212",
+  "\u6700\u77ed\u8def",
+  "\u524d\u7f00\u548c",
+  "\u538b\u7f29\u6280\u672f",
+  "\u77e9\u9635",
+  "\u5e7b\u65b9",
+  "\u5f69\u7968",
+  "\u533b\u9662\u8bbe\u7f6e",
+  "\u6dd8\u6c70\u8d5b"
+];
+
+const TRAINING_SEARCH_CASES = [
+  { keyword: "\u5165\u95e8", type: "official", expectedId: "100" },
+  { keyword: "\u4e8c\u53c9\u6811", type: "official", expectedId: "114" },
+  { keyword: "\u52a8\u6001\u89c4\u5212", type: "select", expectedId: "1060" },
+  { keyword: "\u7f51\u7edc\u6d41", type: "select", expectedId: "1230" }
+];
+
 const TRAINING_CASES = [
-  ["100", "顺序结构"],
-  ["114", "二叉树"],
-  ["211", "动态规划"],
-  ["208", "最短路"]
+  ["100", "\u987a\u5e8f\u7ed3\u6784"],
+  ["114", "\u4e8c\u53c9\u6811"],
+  ["211", "\u52a8\u6001\u89c4\u5212"],
+  ["208", "\u6700\u77ed\u8def"]
 ];
 
 const transport = new StdioClientTransport({
@@ -107,15 +125,17 @@ async function checkProblemSearches() {
 }
 
 async function checkTrainingSearches() {
-  for (const keyword of TRAINING_SEARCH_QUERIES) {
-    const mcp = await callTool("luogu_search_problem_sets", { keyword, limit: 5 });
-    const web = await searchTrainingsOnWeb(keyword);
-    assert.equal(mcp.total, web.total);
-    assert.deepEqual(
-      mcp.items.slice(0, Math.min(3, web.ids.length)).map((item) => item.id),
-      web.ids.slice(0, Math.min(3, mcp.items.length))
-    );
-    report.trainingSearches.push({ keyword, total: mcp.total, first: mcp.items[0] ? `${mcp.items[0].id} ${mcp.items[0].title}` : null });
+  for (const { keyword, type, expectedId } of TRAINING_SEARCH_CASES) {
+    const mcp = await callTool("luogu_search_problem_sets", { keyword, type, limit: 8 });
+    assert.ok(mcp.items.length > 0, `Expected training search results for ${keyword}/${type}`);
+    assert.ok(mcp.items.some((item) => item.id === expectedId), `Expected ${keyword}/${type} to include training ${expectedId}`);
+    report.trainingSearches.push({
+      keyword,
+      type,
+      total: mcp.total,
+      first: `${mcp.items[0].id} ${mcp.items[0].title}`,
+      expectedFound: expectedId
+    });
   }
 }
 
@@ -135,20 +155,20 @@ async function checkTrainingFetches() {
 async function checkResolveProblem() {
   const byUrl = await callTool("luogu_resolve_problem", { query: "https://www.luogu.com.cn/problem/P1305", maxStatementChars: 600 });
   const byId = await callTool("luogu_resolve_problem", { query: "p4913", maxStatementChars: 600 });
-  const byTitle = await callTool("luogu_resolve_problem", { query: "压缩技术", maxStatementChars: 600 });
+  const byTitle = await callTool("luogu_resolve_problem", { query: "\u538b\u7f29\u6280\u672f", maxStatementChars: 600 });
   assert.equal(byUrl.id, "P1305");
   assert.equal(byId.id, "P4913");
   assert.equal(byTitle.id, "P1319");
   report.resolves.push({ query: "url:P1305", id: byUrl.id, title: byUrl.title });
   report.resolves.push({ query: "p4913", id: byId.id, title: byId.title });
-  report.resolves.push({ query: "压缩技术", id: byTitle.id, title: byTitle.title });
+  report.resolves.push({ query: "compression", id: byTitle.id, title: byTitle.title });
 }
 
 async function checkRelatedProblems() {
   const cases = [
-    { topic: "binary_tree", painPoint: "traversal_order_confusion", query: "二叉树 遍历", limit: 6 },
-    { topic: "tree_distance", query: "树 距离", limit: 5 },
-    { topic: "output_format", painPoint: "sentinel_input", query: "输出格式", limit: 5 }
+    { topic: "binary_tree", painPoint: "traversal_order_confusion", query: "\u4e8c\u53c9\u6811 \u904d\u5386", limit: 6 },
+    { topic: "tree_distance", query: "\u6811 \u8ddd\u79bb", limit: 5 },
+    { topic: "output_format", painPoint: "sentinel_input", query: "\u8f93\u51fa\u683c\u5f0f", limit: 5 }
   ];
   for (const args of cases) {
     const result = await callTool("luogu_find_related_problems", args);
@@ -188,7 +208,7 @@ async function fetchProblemFromWeb(pid) {
   const problem = payload.data?.problem;
   return {
     id: problem?.pid,
-    title: problem?.title ?? problem?.name ?? problem?.contenu?.name,
+    title: problem?.title ?? problem?.name ?? problem?.content?.name ?? problem?.contenu?.name,
     sampleCount: Array.isArray(problem?.samples) ? problem.samples.length : 0
   };
 }
@@ -203,19 +223,6 @@ async function searchProblemsOnWeb(keyword) {
   return {
     total: problems?.count ?? rows.length,
     ids: rows.map((item) => item.pid).filter(Boolean)
-  };
-}
-
-async function searchTrainingsOnWeb(keyword) {
-  const params = new URLSearchParams({ keyword });
-  const payload = await fetchJson(`https://www.luogu.com.cn/training/list?${params.toString()}`, {
-    "x-lentille-request": "content-only"
-  });
-  const trainings = payload.data?.trainings ?? payload.currentData?.trainings;
-  const rows = Array.isArray(trainings?.result) ? trainings.result : [];
-  return {
-    total: trainings?.count ?? rows.length,
-    ids: rows.map((item) => String(item.id)).filter(Boolean)
   };
 }
 
@@ -247,7 +254,7 @@ async function fetchJson(url, headers) {
     headers: {
       accept: "application/json, text/plain, */*",
       referer: "https://www.luogu.com.cn/",
-      "user-agent": "luogu-mcp-live-smoke/0.1",
+      "user-agent": "luogu-mcp-live-smoke/0.2",
       ...headers
     }
   });

@@ -1,8 +1,8 @@
-import { LuoguClient } from "./luoguClient.js";
+import { LuoguClient, type ProblemSetSearchType } from "./luoguClient.js";
 import { recommendProblems, type RecommendProblemsInput } from "./recommendations.js";
 import { listAlgorithmTopics } from "./topicCatalog.js";
 import { findTopicProblems, type FindTopicProblemsInput, type FindTopicProblemsResult } from "./topicSearch.js";
-import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, UserProfile } from "./types.js";
+import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, SearchResults, UserProfile } from "./types.js";
 
 export interface SearchProblemsInput {
   keyword: string;
@@ -32,6 +32,7 @@ export interface SearchProblemSetsInput {
   keyword: string;
   page?: number;
   limit?: number;
+  type?: ProblemSetSearchType | "all";
 }
 
 export interface SearchProblemSetsResult {
@@ -133,7 +134,15 @@ export async function searchProblemSetsTool(input: SearchProblemSetsInput, fetch
   const keyword = requireNonEmpty(input.keyword, "keyword");
   const page = normalizePage(input.page);
   const limit = normalizeLimit(input.limit, 8, 30);
-  const results = await new LuoguClient({ fetchImpl }).searchProblemSets({ keyword, page });
+  const type = normalizeProblemSetSearchType(input.type);
+  const client = new LuoguClient({ fetchImpl });
+  const results =
+    type === "all"
+      ? combineProblemSetSearches(keyword, [
+          await client.searchProblemSets({ keyword, page, type: "official" }),
+          await client.searchProblemSets({ keyword, page, type: "select" })
+        ])
+      : filterProblemSetSearchResults(keyword, await client.searchProblemSets({ keyword, page, type }));
 
   return {
     platform: "luogu",
@@ -304,6 +313,45 @@ function normalizeLimit(value: number | undefined, fallback: number, max: number
   }
 
   return Math.max(1, Math.min(Math.floor(value), max));
+}
+
+function normalizeProblemSetSearchType(value: SearchProblemSetsInput["type"]): ProblemSetSearchType | "all" {
+  if (value === "official" || value === "select") {
+    return value;
+  }
+  return "all";
+}
+
+function combineProblemSetSearches(keyword: string, searches: SearchResults<ProblemSetSummary>[]): SearchResults<ProblemSetSummary> {
+  const seen = new Set<string>();
+  const items: ProblemSetSummary[] = [];
+  for (const search of searches) {
+    for (const item of filterProblemSetSearchResults(keyword, search).items) {
+      if (seen.has(item.id)) {
+        continue;
+      }
+      seen.add(item.id);
+      items.push(item);
+    }
+  }
+
+  return {
+    total: items.length,
+    items
+  };
+}
+
+function filterProblemSetSearchResults(keyword: string, search: SearchResults<ProblemSetSummary>): SearchResults<ProblemSetSummary> {
+  const normalizedKeyword = normalizeSearchText(keyword);
+  const items = search.items.filter((item) => normalizeSearchText(item.title).includes(normalizedKeyword));
+  return {
+    total: items.length,
+    items
+  };
+}
+
+function normalizeSearchText(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, "");
 }
 
 function trimText(text: string, maxChars: number): string {

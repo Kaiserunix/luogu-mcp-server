@@ -7,7 +7,7 @@ import {
 } from "./normalizers.js";
 import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, SearchResults, UserProfile } from "./types.js";
 
-const DEFAULT_USER_AGENT = "luogu-mcp-server/0.2";
+const DEFAULT_USER_AGENT = "luogu-mcp-server/0.2.1";
 const RETRY_DELAYS_MS = [250, 750];
 
 export interface LuoguClientOptions {
@@ -19,6 +19,14 @@ export interface SearchOptions {
   keyword: string;
   page?: number;
   tagIds?: number[];
+}
+
+export type ProblemSetSearchType = "official" | "select";
+
+export interface SearchProblemSetOptions {
+  keyword: string;
+  page?: number;
+  type?: ProblemSetSearchType;
 }
 
 export class LuoguClient {
@@ -58,7 +66,7 @@ export class LuoguClient {
     return normalizeProblemPayload(payload);
   }
 
-  async searchProblemSets(options: SearchOptions): Promise<SearchResults<ProblemSetSummary>> {
+  async searchProblemSets(options: SearchProblemSetOptions): Promise<SearchResults<ProblemSetSummary>> {
     const keyword = requireNonEmpty(options.keyword, "keyword");
     const params = new URLSearchParams({
       keyword
@@ -66,6 +74,9 @@ export class LuoguClient {
     const page = normalizePositiveInteger(options.page);
     if (page) {
       params.set("page", String(page));
+    }
+    if (options.type) {
+      params.set("type", options.type);
     }
 
     const payload = await this.getJson(`https://www.luogu.com.cn/training/list?${params.toString()}`, {

@@ -18,7 +18,7 @@ This server is designed for AI tutoring and practice agents. The model can find 
 | `luogu_find_related_problems` | Mix topic/pain-point recommendations with live keyword search to find related practice. |
 | `luogu_list_algorithm_topics` | List canonical algorithm topics, aliases, and known tag ids. |
 | `luogu_find_topic_problems` | Find topic practice problems using aliases, tag ids, deduplication, and match reasons. |
-| `luogu_search_problem_sets` | Search Luogu training/problem sets by keyword. |
+| `luogu_search_problem_sets` | Search Luogu training/problem sets by keyword. Supports `type: "all" | "official" | "select"` because Luogu's current official-list endpoint only exposes the public official index, while selected user-shared sets support keyword search. |
 | `luogu_fetch_problem_set` | Fetch one Luogu training/problem set and problem summaries by id. |
 | `luogu_recommend_problems` | Return seed recommendations from a topic or student pain point. |
 | `luogu_get_user_profile` | Fetch public Luogu user profile data by uid. |
@@ -171,6 +171,18 @@ Fetch a public user profile:
   "uid": 1
 }
 ```
+
+Search training/problem sets:
+
+```json
+{
+  "keyword": "网络流",
+  "type": "select",
+  "limit": 5
+}
+```
+
+`type: "all"` is the default. It combines title-filtered official sets with selected user-shared set search. Use `type: "official"` for the public official index, or `type: "select"` for selected user-shared sets.
 
 ## Luogu Route Parity
 

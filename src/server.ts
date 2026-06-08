@@ -32,7 +32,7 @@ export const LUOGU_MCP_TOOL_NAMES = [
 export function createLuoguMcpServer(): McpServer {
   const server = new McpServer({
     name: "luogu-mcp-server",
-    version: "0.2.0"
+    version: "0.2.1"
   });
 
   server.registerTool(
@@ -145,11 +145,12 @@ export function createLuoguMcpServer(): McpServer {
     "luogu_search_problem_sets",
     {
       title: "Search Luogu Training Sets",
-      description: "Search Luogu training/problem sets by keyword.",
+      description: "Search Luogu training/problem sets by keyword. By default, combines title-filtered official sets with selected user-shared sets.",
       inputSchema: {
         keyword: z.string().min(1).describe("Training set keyword or title fragment."),
         page: z.number().int().min(1).optional().describe("Luogu training list page, starting from 1."),
-        limit: z.number().int().min(1).max(30).optional().describe("Maximum returned items.")
+        limit: z.number().int().min(1).max(30).optional().describe("Maximum returned items."),
+        type: z.enum(["all", "official", "select"]).optional().describe("Search scope: all combines official and selected sets; official filters Luogu official sets by title; select searches selected user-shared sets.")
       },
       annotations: {
         readOnlyHint: true,

@@ -102,7 +102,7 @@ cmd /c npm start
 | `luogu_find_related_problems` | 结合主题/卡点推荐和实时关键词搜索，寻找相关练习。 |
 | `luogu_list_algorithm_topics` | 列出内置算法主题、别名和已知洛谷标签 id。 |
 | `luogu_find_topic_problems` | 通过主题别名、标签 id、去重和匹配理由寻找专题练习。 |
-| `luogu_search_problem_sets` | 按关键词搜索洛谷训练/题单。 |
+| `luogu_search_problem_sets` | 按关键词搜索洛谷训练/题单。支持 `type: "all" | "official" | "select"`；当前洛谷官方题单列表只暴露公开官方索引，精选用户题单支持关键词搜索。 |
 | `luogu_fetch_problem_set` | 按 id 获取一个洛谷训练/题单及其中题目摘要。 |
 | `luogu_recommend_problems` | 根据知识点或学生卡点返回种子推荐题。 |
 | `luogu_get_user_profile` | 按 uid 获取公开洛谷用户主页信息。 |
@@ -165,6 +165,18 @@ cmd /c npm start
   "uid": 1
 }
 ```
+
+搜索训练/题单：
+
+```json
+{
+  "keyword": "网络流",
+  "type": "select",
+  "limit": 5
+}
+```
+
+`type: "all"` 是默认值，会合并“官方索引标题过滤”和“精选用户题单搜索”。只查官方索引用 `official`，只查精选用户题单用 `select`。
 
 ## Cloudflare Worker 部署
 
