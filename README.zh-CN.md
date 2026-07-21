@@ -1,59 +1,12 @@
-# luogu-mcp-server
+# 洛谷 MCP Server | Luogu MCP Server
 
 [English README](README.md)
 
-一个面向洛谷的轻量 MCP 服务器，用于给 AI 助教、刷题助手、竞赛训练代理提供只读的洛谷题目检索与题面获取能力。
+一个用于搜索洛谷题目、读取题面与题单、寻找相关练习的轻量 MCP Server。可以通过 npm 在本地运行，也可以直接连接公共 HTTP 地址。
 
-它提供两种入口：
+## 快速开始
 
-- 本地 stdio MCP：适合 Claude Desktop、Cursor、Codex、Continue 等本地 MCP 客户端。
-- Cloudflare Workers 远程 MCP：适合直接通过 URL 使用 Streamable HTTP MCP。
-
-所有工具都是只读工具，不会提交代码、不会修改洛谷账号数据，也不会替你登录洛谷。
-
-## 为什么做这个
-
-很多 AI 助教在讲算法题时最大的问题不是不会讲，而是拿不到稳定、结构化、上下文可控的题目信息。
-
-`luogu-mcp-server` 的目标是把洛谷上的公开题目内容整理成适合模型消费的结构：
-
-- 通过关键词、题号、URL、主题别名查找题目。
-- 获取题面、输入输出格式、样例、标签、难度和来源链接。
-- 根据知识点或学生卡点推荐相关练习。
-- 搜索和读取洛谷训练/题单。
-- 获取公开用户主页信息。
-- 明确报告哪些路线可用、哪些能力需要登录、哪些能力暂不开放。
-
-## 在线可用地址
-
-已经部署好的公开只读 Cloudflare Worker：
-
-- 健康检查：`https://luogu-mcp-server.lantangtang54.workers.dev/health`
-- MCP 地址：`https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
-
-Streamable HTTP MCP 客户端配置：
-
-```json
-{
-  "mcpServers": {
-    "luogu": {
-      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
-    }
-  }
-}
-```
-
-## 从 npm 使用
-
-npm 包名是 [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server)。
-
-直接运行：
-
-```powershell
-npx -y luogu-mcp-server
-```
-
-stdio MCP 客户端配置：
+npm 包名是 [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server)：
 
 ```json
 {
@@ -66,6 +19,28 @@ stdio MCP 客户端配置：
 }
 ```
 
+配置后可以直接说：
+
+```text
+在洛谷搜索五道适合入门的二叉树题。
+获取洛谷 P1305 的题面和样例。
+根据“遍历顺序容易混淆”推荐相关练习。
+```
+
+也可以使用公共只读地址：
+
+```json
+{
+  "mcpServers": {
+    "luogu": {
+      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+    }
+  }
+}
+```
+
+所有工具都是只读工具。它们用于公开题目、题单、推荐和公开用户资料，不执行登录或提交。
+
 ## 从源码运行
 
 ```powershell
@@ -76,7 +51,7 @@ cmd /c npm run build
 cmd /c npm start
 ```
 
-本地源码版 stdio MCP 配置示例：
+本地源码版 stdio MCP 配置：
 
 ```json
 {

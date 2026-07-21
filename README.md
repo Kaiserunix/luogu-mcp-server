@@ -1,12 +1,31 @@
-# luogu-mcp-server
+# Luogu MCP Server | 洛谷 MCP Server
 
 [中文文档](README.zh-CN.md)
 
-A small stdio MCP server for Luogu problem discovery. It exposes a LeetCode-MCP-style Luogu route for problem search, problem fetch, URL/id resolution, related practice discovery, training set search, training set fetch, public user profiles, and explicit capability reporting.
+A small MCP server for searching Luogu problems, reading statements and training sets, and finding related practice. It can run locally through npm or as a hosted Streamable HTTP server.
 
-## Why
+## Quick Start
 
-This server is designed for AI tutoring and practice agents. The model can find a problem by topic, fetch the exact statement and samples, or ask for a bounded recommendation from a known topic or student pain point.
+The package is published on npm as [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server):
+
+```json
+{
+  "mcpServers": {
+    "luogu": {
+      "command": "npx",
+      "args": ["-y", "luogu-mcp-server"]
+    }
+  }
+}
+```
+
+Then ask:
+
+```text
+Search Luogu for five beginner binary-tree problems.
+Fetch Luogu P1305 with its statement and samples.
+Find related practice for traversal-order confusion.
+```
 
 ## Tools
 
@@ -26,7 +45,9 @@ This server is designed for AI tutoring and practice agents. The model can find 
 
 All tools are read-only.
 
-## Install From Source
+## Other Ways To Run
+
+From source:
 
 ```powershell
 git clone https://github.com/kaiserunix/luogu-mcp-server.git
@@ -35,30 +56,7 @@ cmd /c npm install
 cmd /c npm run build
 ```
 
-## Use From npm
-
-The package is published on npm as [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server).
-
-```powershell
-npx -y luogu-mcp-server
-```
-
-For stdio MCP clients, use:
-
-```json
-{
-  "mcpServers": {
-    "luogu": {
-      "command": "npx",
-      "args": ["-y", "luogu-mcp-server"]
-    }
-  }
-}
-```
-
-## MCP Client Config From Source
-
-Use `node` directly as the stdio command:
+Use `node` directly from a source checkout:
 
 ```json
 {
@@ -74,14 +72,10 @@ Use `node` directly as the stdio command:
 }
 ```
 
-## Hosted Cloudflare Worker
-
-A public read-only Streamable HTTP deployment is available at:
+Or use the public read-only Streamable HTTP deployment:
 
 - Health: `https://luogu-mcp-server.lantangtang54.workers.dev/health`
 - MCP endpoint: `https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
-
-For Streamable HTTP MCP clients, use:
 
 ```json
 {

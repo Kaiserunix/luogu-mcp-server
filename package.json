@@ -1,7 +1,7 @@
 {
   "name": "luogu-mcp-server",
   "version": "0.2.1",
-  "description": "A stdio MCP server for searching and fetching Luogu problems and training sets.",
+  "description": "洛谷题目搜索、题单与推荐的 MCP Server | Luogu MCP for AI coding agents.",
   "type": "module",
   "bin": {
     "luogu-mcp-server": "dist/index.js"
@@ -29,9 +29,12 @@
   "keywords": [
     "luogu",
     "mcp",
+    "mcp-server",
     "model-context-protocol",
     "competitive-programming",
-    "online-judge"
+    "online-judge",
+    "ai-coding",
+    "vscode"
   ],
   "author": "Kaiserunix",
   "license": "MIT",
