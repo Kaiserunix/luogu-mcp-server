@@ -6,7 +6,19 @@ A small MCP server for searching Luogu problems, reading statements and training
 
 ## Quick Start
 
-The package is published on npm as [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server):
+Use the hosted read-only server without installing anything:
+
+```json
+{
+  "mcpServers": {
+    "luogu": {
+      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+    }
+  }
+}
+```
+
+To keep the server on your machine, use the published [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server) package:
 
 ```json
 {
@@ -45,6 +57,12 @@ Find related practice for traversal-order confusion.
 
 All tools are read-only.
 
+## Availability
+
+- Hosted MCP: `https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
+- Health: `https://luogu-mcp-server.lantangtang54.workers.dev/health`
+- Official MCP Registry: `io.github.Kaiserunix/luogu-mcp-server`, described by [`server.json`](server.json)
+
 ## Other Ways To Run
 
 From source:
@@ -64,24 +82,9 @@ Use `node` directly from a source checkout:
     "luogu": {
       "command": "node",
       "args": [
-        "C:\\Users\\qwerf\\Desktop\\luogu-mcp-server\\dist\\index.js"
+        "C:\\path\\to\\luogu-mcp-server\\dist\\index.js"
       ],
-      "cwd": "C:\\Users\\qwerf\\Desktop\\luogu-mcp-server"
-    }
-  }
-}
-```
-
-Or use the public read-only Streamable HTTP deployment:
-
-- Health: `https://luogu-mcp-server.lantangtang54.workers.dev/health`
-- MCP endpoint: `https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
-
-```json
-{
-  "mcpServers": {
-    "luogu": {
-      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+      "cwd": "C:\\path\\to\\luogu-mcp-server"
     }
   }
 }
