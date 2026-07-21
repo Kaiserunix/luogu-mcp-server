@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.kaiserunix/luogu-mcp-server",
+  "title": "Luogu MCP Server",
+  "description": "Search Luogu problems, fetch statements, explore problem sets and get practice recommendations.",
+  "repository": {
+    "url": "https://github.com/Kaiserunix/luogu-mcp-server",
+    "source": "github"
+  },
+  "version": "0.2.1",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+    }
+  ]
+}
