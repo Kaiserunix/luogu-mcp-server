@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.kaiserunix/luogu-mcp-server",
+  "name": "io.github.Kaiserunix/luogu-mcp-server",
   "title": "Luogu MCP Server",
   "description": "Search Luogu problems, fetch statements, explore problem sets and get practice recommendations.",
   "repository": {
