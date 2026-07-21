@@ -6,7 +6,19 @@
 
 ## 快速开始
 
-npm 包名是 [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server)：
+不安装任何东西，直接连接公共只读服务：
+
+```json
+{
+  "mcpServers": {
+    "luogu": {
+      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+    }
+  }
+}
+```
+
+希望服务留在本机时，使用 npm 包 [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-server)：
 
 ```json
 {
@@ -27,19 +39,29 @@ npm 包名是 [`luogu-mcp-server`](https://www.npmjs.com/package/luogu-mcp-serve
 根据“遍历顺序容易混淆”推荐相关练习。
 ```
 
-也可以使用公共只读地址：
+## 能做什么
 
-```json
-{
-  "mcpServers": {
-    "luogu": {
-      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
-    }
-  }
-}
-```
+| 工具 | 用途 |
+| --- | --- |
+| `luogu_search_problems` | 按关键词、主题、标题片段、题号和可选洛谷标签搜索题目。 |
+| `luogu_fetch_problem` | 按 `pid` 获取题面、输入输出格式、样例、标签、难度和 URL。 |
+| `luogu_resolve_problem` | 从洛谷 URL、题号或标题片段解析并获取题目。 |
+| `luogu_find_related_problems` | 结合主题/卡点推荐和实时关键词搜索，寻找相关练习。 |
+| `luogu_list_algorithm_topics` | 列出内置算法主题、别名和已知洛谷标签 id。 |
+| `luogu_find_topic_problems` | 通过主题别名、标签 id、去重和匹配理由寻找专题练习。 |
+| `luogu_search_problem_sets` | 按关键词搜索洛谷训练/题单。支持 `type: "all" | "official" | "select"`；当前洛谷官方题单列表只暴露公开官方索引，精选用户题单支持关键词搜索。 |
+| `luogu_fetch_problem_set` | 按 id 获取一个洛谷训练/题单及其中题目摘要。 |
+| `luogu_recommend_problems` | 根据知识点或学生卡点返回种子推荐题。 |
+| `luogu_get_user_profile` | 按 uid 获取公开洛谷用户主页信息。 |
+| `luogu_get_capabilities` | 报告洛谷路线中可用、需要登录或计划中的能力。 |
 
 所有工具都是只读工具。它们用于公开题目、题单、推荐和公开用户资料，不执行登录或提交。
+
+## 服务地址
+
+- 公共 MCP：`https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
+- 健康检查：`https://luogu-mcp-server.lantangtang54.workers.dev/health`
+- 官方 MCP Registry：`io.github.Kaiserunix/luogu-mcp-server`，定义见 [`server.json`](server.json)
 
 ## 从源码运行
 
@@ -59,29 +81,13 @@ cmd /c npm start
     "luogu": {
       "command": "node",
       "args": [
-        "C:\\Users\\qwerf\\Desktop\\luogu-mcp-server\\dist\\index.js"
+        "C:\\替换为实际路径\\luogu-mcp-server\\dist\\index.js"
       ],
-      "cwd": "C:\\Users\\qwerf\\Desktop\\luogu-mcp-server"
+      "cwd": "C:\\替换为实际路径\\luogu-mcp-server"
     }
   }
 }
 ```
-
-## 工具列表
-
-| 工具 | 用途 |
-| --- | --- |
-| `luogu_search_problems` | 按关键词、主题、标题片段、题号和可选洛谷标签搜索题目。 |
-| `luogu_fetch_problem` | 按 `pid` 获取题面、输入输出格式、样例、标签、难度和 URL。 |
-| `luogu_resolve_problem` | 从洛谷 URL、题号或标题片段解析并获取题目。 |
-| `luogu_find_related_problems` | 结合主题/卡点推荐和实时关键词搜索，寻找相关练习。 |
-| `luogu_list_algorithm_topics` | 列出内置算法主题、别名和已知洛谷标签 id。 |
-| `luogu_find_topic_problems` | 通过主题别名、标签 id、去重和匹配理由寻找专题练习。 |
-| `luogu_search_problem_sets` | 按关键词搜索洛谷训练/题单。支持 `type: "all" | "official" | "select"`；当前洛谷官方题单列表只暴露公开官方索引，精选用户题单支持关键词搜索。 |
-| `luogu_fetch_problem_set` | 按 id 获取一个洛谷训练/题单及其中题目摘要。 |
-| `luogu_recommend_problems` | 根据知识点或学生卡点返回种子推荐题。 |
-| `luogu_get_user_profile` | 按 uid 获取公开洛谷用户主页信息。 |
-| `luogu_get_capabilities` | 报告洛谷路线中可用、需要登录或计划中的能力。 |
 
 ## 示例调用参数
 
