@@ -1,4 +1,4 @@
-import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createMcpHandler } from "@modelcontextprotocol/server";
 import { createLuoguMcpServer, LUOGU_MCP_TOOL_NAMES } from "./server.js";
 
 interface WorkerEnv {
@@ -8,6 +8,7 @@ interface WorkerEnv {
 
 const MCP_PATH = "/mcp";
 const CORS_HEADERS = "authorization, content-type, accept, mcp-protocol-version, mcp-session-id, last-event-id, x-luogu-mcp-token";
+const mcpHandler = createMcpHandler(() => createLuoguMcpServer(), { responseMode: "json" });
 
 export default {
   async fetch(request: Request, env: WorkerEnv): Promise<Response> {
@@ -40,13 +41,7 @@ export default {
       return authError;
     }
 
-    const transport = new WebStandardStreamableHTTPServerTransport({
-      sessionIdGenerator: undefined
-    });
-    const server = createLuoguMcpServer();
-    await server.connect(transport);
-
-    const response = await transport.handleRequest(request);
+    const response = await mcpHandler.fetch(request);
     return withCorsHeaders(response, request, env);
   }
 };

@@ -12,7 +12,7 @@
 {
   "mcpServers": {
     "luogu": {
-      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+      "url": "https://luogu-mcp.ksrnyx.top/mcp"
     }
   }
 }
@@ -59,8 +59,8 @@
 
 ## 服务地址
 
-- 公共 MCP：`https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
-- 健康检查：`https://luogu-mcp-server.lantangtang54.workers.dev/health`
+- 公共 MCP：`https://luogu-mcp.ksrnyx.top/mcp`
+- 健康检查：`https://luogu-mcp.ksrnyx.top/health`
 - 官方 MCP Registry：`io.github.Kaiserunix/luogu-mcp-server`，定义见 [`server.json`](server.json)
 
 ## 从源码运行
@@ -220,7 +220,7 @@ cmd /c npm run smoke:cf
 线上 Worker smoke：
 
 ```powershell
-cmd /c npm run smoke:cf -- https://luogu-mcp-server.lantangtang54.workers.dev
+cmd /c npm run smoke:cf -- https://luogu-mcp.ksrnyx.top
 ```
 
 洛谷实时站点 smoke：

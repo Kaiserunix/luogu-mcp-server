@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { Client } from "@modelcontextprotocol/client";
 
 const MIMO_API_BASE = process.env.MIMO_API_BASE ?? "https://token-plan-cn.xiaomimimo.com/v1";
 const MIMO_MODEL = process.env.MIMO_MODEL ?? "mimo-v2.5";

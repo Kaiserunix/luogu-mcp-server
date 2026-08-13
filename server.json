@@ -11,7 +11,7 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+      "url": "https://luogu-mcp.ksrnyx.top/mcp"
     }
   ]
 }
