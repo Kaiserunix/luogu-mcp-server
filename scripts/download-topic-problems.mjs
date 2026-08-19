@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { Client } from "@modelcontextprotocol/client";
 
 const OUTPUT_DIR = process.env.LUOGU_DOWNLOAD_OUTPUT ?? "downloads/luogu-topic-problems";
 const TOPIC_LIMIT = Number(process.env.LUOGU_DOWNLOAD_TOPIC_LIMIT ?? 100);

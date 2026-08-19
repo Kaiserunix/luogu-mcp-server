@@ -12,7 +12,7 @@ Use the hosted read-only server without installing anything:
 {
   "mcpServers": {
     "luogu": {
-      "url": "https://luogu-mcp-server.lantangtang54.workers.dev/mcp"
+      "url": "https://luogu-mcp.ksrnyx.top/mcp"
     }
   }
 }
@@ -59,8 +59,8 @@ All tools are read-only.
 
 ## Availability
 
-- Hosted MCP: `https://luogu-mcp-server.lantangtang54.workers.dev/mcp`
-- Health: `https://luogu-mcp-server.lantangtang54.workers.dev/health`
+- Hosted MCP: `https://luogu-mcp.ksrnyx.top/mcp`
+- Health: `https://luogu-mcp.ksrnyx.top/health`
 - Official MCP Registry: `io.github.Kaiserunix/luogu-mcp-server`, described by [`server.json`](server.json)
 
 ## Other Ways To Run

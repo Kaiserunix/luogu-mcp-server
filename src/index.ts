@@ -1,10 +1,9 @@
 #!/usr/bin/env node
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { createLuoguMcpServer } from "./server.js";
 
 async function main(): Promise<void> {
-  const server = createLuoguMcpServer();
-  await server.connect(new StdioServerTransport());
+  serveStdio(() => createLuoguMcpServer());
 }
 
 main().catch((error: unknown) => {

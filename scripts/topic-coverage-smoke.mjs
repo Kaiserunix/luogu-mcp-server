@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
+import { StdioClientTransport } from "@modelcontextprotocol/client/stdio";
+import { Client } from "@modelcontextprotocol/client";
 
 const MIN_PROBLEM_HITS = Number(process.env.LUOGU_TOPIC_MIN_PROBLEM_HITS ?? 98);
 const REQUEST_DELAY_MS = Number(process.env.LUOGU_TOPIC_DELAY_MS ?? 60);

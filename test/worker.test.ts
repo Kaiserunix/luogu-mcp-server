@@ -1,7 +1,26 @@
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { describe, expect, test } from "vitest";
 import worker from "../src/worker.js";
 
 describe("Cloudflare Worker MCP entrypoint", () => {
+  test("negotiates MCP 2026-07-28 over the Worker endpoint", async () => {
+    const client = new Client(
+      { name: "luogu-modern-worker-test", version: "1.0.0" },
+      { versionNegotiation: { mode: "auto" } }
+    );
+    const transport = new StreamableHTTPClientTransport(new URL("https://example.com/mcp"), {
+      fetch: (input, init) => worker.fetch(new Request(input, init), {})
+    });
+
+    await client.connect(transport);
+    try {
+      expect(client.getNegotiatedProtocolVersion()).toBe("2026-07-28");
+      expect((await client.listTools()).tools.map((tool) => tool.name)).toContain("luogu_fetch_problem");
+    } finally {
+      await client.close();
+    }
+  });
+
   test("reports health and the MCP endpoint", async () => {
     const response = await worker.fetch(new Request("https://example.com/"), {});
     const body = await response.json();
