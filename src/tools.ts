@@ -1,368 +1,130 @@
-import { LuoguClient, type ProblemSetSearchType } from "./luoguClient.js";
-import { recommendProblems, type RecommendProblemsInput } from "./recommendations.js";
-import { listAlgorithmTopics } from "./topicCatalog.js";
-import { findTopicProblems, type FindTopicProblemsInput, type FindTopicProblemsResult } from "./topicSearch.js";
-import type { ProblemRecord, ProblemSetRecord, ProblemSetSummary, ProblemSummary, SearchResults, UserProfile } from "./types.js";
+import { LuoguClient } from "./client/luoguClient.js";
+import {
+  createLuoguToolHandlers,
+  getLuoguRouteCapabilities,
+  type FetchProblemInput,
+  type FetchProblemSetInput,
+  type FetchProblemSetResult,
+  type GetUserProfileInput,
+  type ListAlgorithmTopicsResult,
+  type LuoguRouteCapabilities,
+  type LuoguRouteCapability,
+  type LuoguToolHandlers,
+  type SearchProblemsInput,
+  type SearchProblemsResult,
+} from "./mcp/index.js";
+import {
+  listAlgorithmTopics,
+  recommendProblems,
+  type FetchProblemResult,
+  type FindRelatedProblemsInput,
+  type FindRelatedProblemsResult,
+  type FindTopicProblemsInput,
+  type FindTopicProblemsResult,
+  type RecommendProblemsInput,
+  type ResolveProblemInput,
+  type SearchProblemSetsInput,
+  type SearchProblemSetsResult,
+} from "./recommender/index.js";
+import type { LuoguGateway, UserProfile } from "./types.js";
 
-export interface SearchProblemsInput {
-  keyword: string;
-  page?: number;
-  limit?: number;
-  tagIds?: number[];
+export {
+  createLuoguToolHandlers,
+  type FetchProblemInput,
+  type FetchProblemResult,
+  type FetchProblemSetInput,
+  type FetchProblemSetResult,
+  type FindRelatedProblemsInput,
+  type FindRelatedProblemsResult,
+  type FindTopicProblemsInput,
+  type FindTopicProblemsResult,
+  type GetUserProfileInput,
+  type ListAlgorithmTopicsResult,
+  type LuoguRouteCapabilities,
+  type LuoguRouteCapability,
+  type LuoguToolHandlers,
+  type ResolveProblemInput,
+  type SearchProblemSetsInput,
+  type SearchProblemSetsResult,
+  type SearchProblemsInput,
+  type SearchProblemsResult,
+};
+
+function resolveHandlers(fetchOrGateway?: typeof fetch | LuoguGateway): LuoguToolHandlers {
+  const gateway =
+    fetchOrGateway && typeof fetchOrGateway === "object" && typeof fetchOrGateway.searchProblems === "function"
+      ? fetchOrGateway
+      : new LuoguClient({ fetchImpl: fetchOrGateway as typeof fetch | undefined });
+  return createLuoguToolHandlers(gateway);
 }
 
-export interface SearchProblemsResult {
-  platform: "luogu";
-  query: string;
-  page: number;
-  total: number;
-  items: ProblemSummary[];
+export async function searchProblemsTool(
+  input: SearchProblemsInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<SearchProblemsResult> {
+  return resolveHandlers(fetchOrGateway).searchProblems(input);
 }
 
-export interface FetchProblemInput {
-  pid: string;
-  maxStatementChars?: number;
+export async function fetchProblemTool(
+  input: FetchProblemInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<FetchProblemResult> {
+  return resolveHandlers(fetchOrGateway).fetchProblem(input);
 }
 
-export interface FetchProblemResult extends ProblemRecord {
-  truncated: boolean;
+export async function resolveProblemTool(
+  input: ResolveProblemInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<FetchProblemResult> {
+  return resolveHandlers(fetchOrGateway).resolveProblem(input);
 }
 
-export interface SearchProblemSetsInput {
-  keyword: string;
-  page?: number;
-  limit?: number;
-  type?: ProblemSetSearchType | "all";
+export async function searchProblemSetsTool(
+  input: SearchProblemSetsInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<SearchProblemSetsResult> {
+  return resolveHandlers(fetchOrGateway).searchProblemSets(input);
 }
 
-export interface SearchProblemSetsResult {
-  platform: "luogu";
-  query: string;
-  page: number;
-  total: number;
-  items: ProblemSetSummary[];
-}
-
-export interface FetchProblemSetInput {
-  id: string;
-  limit?: number;
-}
-
-export interface FetchProblemSetResult extends ProblemSetRecord {
-  truncatedProblemList: boolean;
-}
-
-export interface ResolveProblemInput {
-  query: string;
-  maxStatementChars?: number;
-}
-
-export interface FindRelatedProblemsInput extends RecommendProblemsInput {
-  query?: string;
-  pid?: string;
-}
-
-export interface FindRelatedProblemsResult {
-  query?: string;
-  pid?: string;
-  topic?: string;
-  painPoint?: string;
-  searchHints: string[];
-  items: ProblemSummary[];
-}
-
-export interface GetUserProfileInput {
-  uid: number;
-}
-
-export interface LuoguRouteCapability {
-  name: string;
-  status: "available" | "auth_required" | "planned";
-  note: string;
-}
-
-export interface LuoguRouteCapabilities {
-  route: "luogu";
-  tools: LuoguRouteCapability[];
-}
-
-export async function searchProblemsTool(input: SearchProblemsInput, fetchImpl?: typeof fetch): Promise<SearchProblemsResult> {
-  const keyword = requireNonEmpty(input.keyword, "keyword");
-  const page = normalizePage(input.page);
-  const limit = normalizeLimit(input.limit, 8, 30);
-  const results = await new LuoguClient({ fetchImpl }).searchProblems({ keyword, page, tagIds: input.tagIds });
-
-  return {
-    platform: "luogu",
-    query: keyword,
-    page,
-    total: results.total,
-    items: results.items.slice(0, limit)
-  };
-}
-
-export async function fetchProblemTool(input: FetchProblemInput, fetchImpl?: typeof fetch): Promise<FetchProblemResult> {
-  const pid = requireNonEmpty(input.pid, "pid").toUpperCase();
-  const maxStatementChars = normalizeLimit(input.maxStatementChars, 5000, 30000);
-  const problem = await new LuoguClient({ fetchImpl }).fetchProblem(pid);
-  const statement = trimText(problem.statement, maxStatementChars);
-
-  return {
-    ...problem,
-    statement,
-    truncated: statement.length < problem.statement.length
-  };
-}
-
-export async function resolveProblemTool(input: ResolveProblemInput, fetchImpl?: typeof fetch): Promise<FetchProblemResult> {
-  const query = requireNonEmpty(input.query, "query");
-  const pid = extractProblemId(query);
-  if (pid) {
-    return fetchProblemTool({ pid, maxStatementChars: input.maxStatementChars }, fetchImpl);
-  }
-
-  const search = await searchProblemsTool({ keyword: query, limit: 1 }, fetchImpl);
-  const first = search.items[0];
-  if (!first) {
-    throw new Error(`No Luogu problem matched query: ${query}`);
-  }
-
-  return fetchProblemTool({ pid: first.id, maxStatementChars: input.maxStatementChars }, fetchImpl);
-}
-
-export async function searchProblemSetsTool(input: SearchProblemSetsInput, fetchImpl?: typeof fetch): Promise<SearchProblemSetsResult> {
-  const keyword = requireNonEmpty(input.keyword, "keyword");
-  const page = normalizePage(input.page);
-  const limit = normalizeLimit(input.limit, 8, 30);
-  const type = normalizeProblemSetSearchType(input.type);
-  const client = new LuoguClient({ fetchImpl });
-  const results =
-    type === "all"
-      ? combineProblemSetSearches(keyword, [
-          await client.searchProblemSets({ keyword, page, type: "official" }),
-          await client.searchProblemSets({ keyword, page, type: "select" })
-        ])
-      : filterProblemSetSearchResults(keyword, await client.searchProblemSets({ keyword, page, type }));
-
-  return {
-    platform: "luogu",
-    query: keyword,
-    page,
-    total: results.total,
-    items: results.items.slice(0, limit)
-  };
-}
-
-export async function fetchProblemSetTool(input: FetchProblemSetInput, fetchImpl?: typeof fetch): Promise<FetchProblemSetResult> {
-  const id = requireNonEmpty(input.id, "id");
-  const limit = normalizeLimit(input.limit, 100, 500);
-  const problemSet = await new LuoguClient({ fetchImpl }).fetchProblemSet(id);
-  const problems = problemSet.problems.slice(0, limit);
-
-  return {
-    ...problemSet,
-    problems,
-    truncatedProblemList: problems.length < problemSet.problems.length
-  };
+export async function fetchProblemSetTool(
+  input: FetchProblemSetInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<FetchProblemSetResult> {
+  return resolveHandlers(fetchOrGateway).fetchProblemSet(input);
 }
 
 export function recommendProblemsTool(input: RecommendProblemsInput) {
   return recommendProblems(input);
 }
 
-export async function findTopicProblemsTool(input: FindTopicProblemsInput, fetchImpl?: typeof fetch): Promise<FindTopicProblemsResult> {
-  return findTopicProblems(input, fetchImpl);
+export async function findTopicProblemsTool(
+  input: FindTopicProblemsInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<FindTopicProblemsResult> {
+  return resolveHandlers(fetchOrGateway).findTopicProblems(input);
 }
 
-export function listAlgorithmTopicsTool() {
+export function listAlgorithmTopicsTool(): ListAlgorithmTopicsResult {
   return {
     platform: "luogu",
-    items: listAlgorithmTopics()
+    items: listAlgorithmTopics(),
   };
 }
 
-export async function findRelatedProblemsTool(input: FindRelatedProblemsInput, fetchImpl?: typeof fetch): Promise<FindRelatedProblemsResult> {
-  const limit = normalizeLimit(input.limit, 5, 20);
-  const recommendations = recommendProblems({ ...input, limit });
-  const items = [...recommendations.items];
-  const hints = [...recommendations.searchHints];
-  if (input.topic && !hints.includes(input.topic)) {
-    hints.push(input.topic);
-  }
-
-  if (items.length < limit && input.topic) {
-    const topicResult = await findTopicProblemsTool(
-      {
-        topic: input.topic,
-        limit,
-        excludeProblemIds: [input.currentProblemId, ...items.map((item) => item.id)].filter((id): id is string => Boolean(id))
-      },
-      fetchImpl
-    );
-    for (const item of topicResult.items) {
-      if (!items.some((existing) => existing.id === item.id)) {
-        items.push(item);
-      }
-      if (items.length >= limit) {
-        break;
-      }
-    }
-  }
-
-  const searchQuery = input.query ?? hints[0] ?? input.pid;
-
-  if (items.length < limit && searchQuery) {
-    const search = await searchProblemsTool({ keyword: searchQuery, limit }, fetchImpl);
-    for (const item of search.items) {
-      if (!items.some((existing) => existing.id === item.id)) {
-        items.push(item);
-      }
-      if (items.length >= limit) {
-        break;
-      }
-    }
-  }
-
-  return {
-    query: input.query,
-    pid: input.pid,
-    topic: input.topic,
-    painPoint: input.painPoint,
-    searchHints: hints,
-    items
-  };
+export async function findRelatedProblemsTool(
+  input: FindRelatedProblemsInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<FindRelatedProblemsResult> {
+  return resolveHandlers(fetchOrGateway).findRelatedProblems(input);
 }
 
-export async function getUserProfileTool(input: GetUserProfileInput, fetchImpl?: typeof fetch): Promise<UserProfile> {
-  const uid = normalizePage(input.uid);
-  return new LuoguClient({ fetchImpl }).fetchUserProfile(uid);
+export async function getUserProfileTool(
+  input: GetUserProfileInput,
+  fetchOrGateway?: typeof fetch | LuoguGateway
+): Promise<UserProfile> {
+  return resolveHandlers(fetchOrGateway).getUserProfile(input);
 }
 
 export function getCapabilitiesTool(): LuoguRouteCapabilities {
-  return {
-    route: "luogu",
-    tools: [
-      {
-        name: "luogu_search_problems",
-        status: "available",
-        note: "Public content-only problem list endpoint."
-      },
-      {
-        name: "luogu_fetch_problem",
-        status: "available",
-        note: "Public content-only problem page endpoint."
-      },
-      {
-        name: "luogu_search_problem_sets",
-        status: "available",
-        note: "Public training list endpoint."
-      },
-      {
-        name: "luogu_fetch_problem_set",
-        status: "available",
-        note: "Public training page endpoint."
-      },
-      {
-        name: "luogu_get_user_profile",
-        status: "available",
-        note: "Public user profile page endpoint; some practice counters can be null."
-      },
-      {
-        name: "luogu_get_recent_submissions",
-        status: "auth_required",
-        note: "Record list currently redirects to login without Luogu session cookies."
-      },
-      {
-        name: "luogu_search_solutions",
-        status: "auth_required",
-        note: "Problem solution pages currently require login in live probes."
-      },
-      {
-        name: "luogu_search_discussions",
-        status: "auth_required",
-        note: "Discussion pages currently require login in live probes."
-      },
-      {
-        name: "luogu_submit_solution",
-        status: "planned",
-        note: "Not implemented; would require authenticated session handling and explicit write-tool safety gates."
-      }
-    ]
-  };
-}
-
-function requireNonEmpty(value: string, name: string): string {
-  const normalized = value.trim();
-  if (!normalized) {
-    throw new Error(`${name} is required.`);
-  }
-  return normalized;
-}
-
-function normalizePage(value: number | undefined): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return 1;
-  }
-
-  return Math.max(1, Math.floor(value));
-}
-
-function normalizeLimit(value: number | undefined, fallback: number, max: number): number {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return fallback;
-  }
-
-  return Math.max(1, Math.min(Math.floor(value), max));
-}
-
-function normalizeProblemSetSearchType(value: SearchProblemSetsInput["type"]): ProblemSetSearchType | "all" {
-  if (value === "official" || value === "select") {
-    return value;
-  }
-  return "all";
-}
-
-function combineProblemSetSearches(keyword: string, searches: SearchResults<ProblemSetSummary>[]): SearchResults<ProblemSetSummary> {
-  const seen = new Set<string>();
-  const items: ProblemSetSummary[] = [];
-  for (const search of searches) {
-    for (const item of filterProblemSetSearchResults(keyword, search).items) {
-      if (seen.has(item.id)) {
-        continue;
-      }
-      seen.add(item.id);
-      items.push(item);
-    }
-  }
-
-  return {
-    total: items.length,
-    items
-  };
-}
-
-function filterProblemSetSearchResults(keyword: string, search: SearchResults<ProblemSetSummary>): SearchResults<ProblemSetSummary> {
-  const normalizedKeyword = normalizeSearchText(keyword);
-  const items = search.items.filter((item) => normalizeSearchText(item.title).includes(normalizedKeyword));
-  return {
-    total: items.length,
-    items
-  };
-}
-
-function normalizeSearchText(value: string): string {
-  return value.trim().toLowerCase().replace(/\s+/g, "");
-}
-
-function trimText(text: string, maxChars: number): string {
-  if (text.length <= maxChars) {
-    return text;
-  }
-
-  return text.slice(0, maxChars);
-}
-
-function extractProblemId(query: string): string | undefined {
-  const match = query.match(/\bP\d+\b/i) ?? query.match(/luogu\.com\.cn\/problem\/(P\d+)/i);
-  return match?.[1]?.toUpperCase() ?? match?.[0]?.toUpperCase();
+  return getLuoguRouteCapabilities();
 }

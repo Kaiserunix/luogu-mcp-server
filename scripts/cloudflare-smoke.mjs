@@ -28,6 +28,27 @@ async function main() {
   assert(toolNames.includes("luogu_fetch_problem"), "tools/list did not include luogu_fetch_problem");
   assert(toolNames.includes("luogu_find_topic_problems"), "tools/list did not include luogu_find_topic_problems");
 
+  const capabilitiesCall = await workerFetch("/mcp", {
+    method: "POST",
+    headers: mcpHeaders(),
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 2,
+      method: "tools/call",
+      params: {
+        name: "luogu_get_capabilities",
+        arguments: {}
+      }
+    })
+  });
+  assert(capabilitiesCall.status === 200, `tools/call returned HTTP ${capabilitiesCall.status}`);
+  const capabilitiesJson = await parseMcpResponse(capabilitiesCall);
+  assert(capabilitiesJson.result?.isError !== true, "luogu_get_capabilities returned an error");
+  assert(
+    capabilitiesJson.result?.structuredContent?.route === "luogu",
+    "luogu_get_capabilities did not return expected structuredContent"
+  );
+
   console.log(
     JSON.stringify(
       {

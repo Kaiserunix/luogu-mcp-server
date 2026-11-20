@@ -1,50 +1,67 @@
 import { createMcpHandler } from "@modelcontextprotocol/server";
-import { createLuoguMcpServer, LUOGU_MCP_TOOL_NAMES } from "./server.js";
+import {
+  LUOGU_MCP_TOOL_NAMES,
+  createDefaultLuoguGateway,
+  createLuoguMcpServer,
+  type CreateLuoguMcpServerOptions,
+} from "./server.js";
 
-interface WorkerEnv {
+export interface WorkerEnv {
   LUOGU_MCP_ALLOWED_ORIGINS?: string;
   LUOGU_MCP_TOKEN?: string;
 }
 
 const MCP_PATH = "/mcp";
-const CORS_HEADERS = "authorization, content-type, accept, mcp-protocol-version, mcp-session-id, last-event-id, x-luogu-mcp-token";
-const mcpHandler = createMcpHandler(() => createLuoguMcpServer(), { responseMode: "json" });
+const CORS_HEADERS =
+  "authorization, content-type, accept, mcp-protocol-version, mcp-session-id, last-event-id, x-luogu-mcp-token";
+const TEXT_ENCODER = new TextEncoder();
 
-export default {
-  async fetch(request: Request, env: WorkerEnv): Promise<Response> {
-    const url = new URL(request.url);
+/** Create a Cloudflare Worker fetch handler with optional injected gateway/client options. */
+export function createWorkerApp(options: CreateLuoguMcpServerOptions = {}) {
+  const sharedGateway = createDefaultLuoguGateway(options);
+  const mcpHandler = createMcpHandler(
+    () => createLuoguMcpServer({ gateway: sharedGateway }),
+    { responseMode: "json" }
+  );
 
-    if (url.pathname === "/" || url.pathname === "/health") {
-      return jsonResponse({
-        name: "luogu-mcp-server",
-        transport: "streamable-http",
-        mcpEndpoint: MCP_PATH,
-        tools: LUOGU_MCP_TOOL_NAMES
-      });
-    }
+  return {
+    async fetch(request: Request, env: WorkerEnv): Promise<Response> {
+      const url = new URL(request.url);
 
-    if (url.pathname !== MCP_PATH) {
-      return jsonResponse({ error: "Not found", mcpEndpoint: MCP_PATH }, 404);
-    }
+      if (url.pathname === "/" || url.pathname === "/health") {
+        return jsonResponse({
+          name: "luogu-mcp-server",
+          transport: "streamable-http",
+          mcpEndpoint: MCP_PATH,
+          tools: LUOGU_MCP_TOOL_NAMES,
+        });
+      }
 
-    if (request.method === "OPTIONS") {
-      return handleOptions(request, env);
-    }
+      if (url.pathname !== MCP_PATH) {
+        return jsonResponse({ error: "Not found", mcpEndpoint: MCP_PATH }, 404);
+      }
 
-    const originError = validateOrigin(request, env);
-    if (originError) {
-      return originError;
-    }
+      if (request.method === "OPTIONS") {
+        return handleOptions(request, env);
+      }
 
-    const authError = validateToken(request, env);
-    if (authError) {
-      return authError;
-    }
+      const originError = validateOrigin(request, env);
+      if (originError) {
+        return originError;
+      }
 
-    const response = await mcpHandler.fetch(request);
-    return withCorsHeaders(response, request, env);
-  }
-};
+      const authError = validateToken(request, env);
+      if (authError) {
+        return withCorsHeaders(authError, request, env);
+      }
+
+      const response = await mcpHandler.fetch(request);
+      return withCorsHeaders(response, request, env);
+    },
+  };
+}
+
+export default createWorkerApp();
 
 function handleOptions(request: Request, env: WorkerEnv): Response {
   const originError = validateOrigin(request, env);
@@ -54,7 +71,7 @@ function handleOptions(request: Request, env: WorkerEnv): Response {
 
   return new Response(null, {
     status: 204,
-    headers: corsHeaders(request, env)
+    headers: corsHeaders(request, env),
   });
 }
 
@@ -72,7 +89,7 @@ function validateOrigin(request: Request, env: WorkerEnv): Response | undefined 
   return jsonResponse(
     {
       error: "Origin is not allowed.",
-      hint: "Set LUOGU_MCP_ALLOWED_ORIGINS to a comma-separated list of browser origins if you need browser access."
+      hint: "Set LUOGU_MCP_ALLOWED_ORIGINS to a comma-separated list of browser origins if you need browser access.",
     },
     403
   );
@@ -85,15 +102,30 @@ function validateToken(request: Request, env: WorkerEnv): Response | undefined {
   }
 
   const authorization = request.headers.get("authorization") ?? "";
-  const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
-  const tokenHeader = request.headers.get("x-luogu-mcp-token")?.trim();
-  if (bearer === expected || tokenHeader === expected) {
+  const bearer = authorization.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? "";
+  const tokenHeader = request.headers.get("x-luogu-mcp-token")?.trim() ?? "";
+  if (constantTimeEqual(bearer, expected) || constantTimeEqual(tokenHeader, expected)) {
     return undefined;
   }
 
   return jsonResponse({ error: "Unauthorized" }, 401, {
-    "WWW-Authenticate": 'Bearer realm="luogu-mcp-server"'
+    "WWW-Authenticate": 'Bearer realm="luogu-mcp-server"',
   });
+}
+
+function constantTimeEqual(actual: string, expected: string): boolean {
+  const actualBytes = TEXT_ENCODER.encode(actual);
+  const expectedBytes = TEXT_ENCODER.encode(expected);
+  const maxLength = Math.max(actualBytes.length, expectedBytes.length);
+  let diff = actualBytes.length ^ expectedBytes.length;
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const a = index < actualBytes.length ? actualBytes[index] : 0;
+    const b = index < expectedBytes.length ? expectedBytes[index] : 0;
+    diff |= a ^ b;
+  }
+
+  return diff === 0 && expectedBytes.length > 0;
 }
 
 function withCorsHeaders(response: Response, request: Request, env: WorkerEnv): Response {
@@ -110,7 +142,7 @@ function withCorsHeaders(response: Response, request: Request, env: WorkerEnv): 
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,
-    headers
+    headers,
   });
 }
 
@@ -135,8 +167,8 @@ function jsonResponse(body: unknown, status = 200, extraHeaders: Record<string, 
     status,
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      ...extraHeaders
-    }
+      ...extraHeaders,
+    },
   });
 }
 

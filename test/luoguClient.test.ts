@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, test, vi } from "vitest";
-import { LuoguClient } from "../src/luoguClient.js";
+import { LuoguClient, LuoguClientError } from "../src/luoguClient.js";
+import type { LuoguParser } from "../src/types.js";
+import {
+  CLOUDFLARE_CHALLENGE_HTML_FIXTURE,
+  LOGIN_HTML_FIXTURE,
+  PROBLEM_HTML_LENTILLE_FIXTURE,
+  PROBLEM_P1305_PAYLOAD,
+} from "./fixtures/luoguFixtures.js";
 
 describe("LuoguClient", () => {
   afterEach(() => {
@@ -105,9 +112,145 @@ describe("LuoguClient", () => {
       );
     };
 
-    const result = await new LuoguClient({ fetchImpl: fakeFetch as typeof fetch }).fetchProblem("P1001");
+    const result = await new LuoguClient({ fetchImpl: fakeFetch as typeof fetch, retryDelaysMs: [0, 0] }).fetchProblem("P1001");
 
     expect(result.id).toBe("P1001");
     expect(attempts).toBe(2);
+  });
+
+  test("aborts and retries timed-out requests, then throws LuoguClientError(TIMEOUT)", async () => {
+    let attempts = 0;
+    const hangingFetch = (_input: string | URL | Request, init?: RequestInit): Promise<Response> => {
+      attempts += 1;
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(init.signal?.reason ?? new DOMException("Aborted", "AbortError"));
+        });
+      });
+    };
+
+    const client = new LuoguClient({
+      fetchImpl: hangingFetch as typeof fetch,
+      timeoutMs: 15,
+      retryDelaysMs: [0],
+    });
+
+    await expect(client.fetchProblem("P1305")).rejects.toMatchObject({
+      name: "LuoguClientError",
+      code: "TIMEOUT",
+      retryable: true,
+    });
+    expect(attempts).toBe(2);
+  });
+
+  test("does not retry non-transient HTTP 404 or 403 responses", async () => {
+    let attempts = 0;
+    const fakeFetch = async (): Promise<Response> => {
+      attempts += 1;
+      return new Response("not found", { status: 404 });
+    };
+
+    const client = new LuoguClient({
+      fetchImpl: fakeFetch as typeof fetch,
+      retryDelaysMs: [0, 0],
+    });
+
+    await expect(client.fetchProblem("P999999")).rejects.toMatchObject({
+      code: "NOT_FOUND",
+      status: 404,
+      retryable: false,
+    });
+    expect(attempts).toBe(1);
+  });
+
+  test("parses Lentille HTML fallback and surfaces login/challenge HTML errors cleanly", async () => {
+    const htmlClient = new LuoguClient({
+      fetchImpl: (async () =>
+        new Response(PROBLEM_HTML_LENTILLE_FIXTURE, {
+          status: 200,
+          headers: { "content-type": "text/html; charset=utf-8" },
+        })) as typeof fetch,
+    });
+    const problem = await htmlClient.fetchProblem("P1001");
+    expect(problem.id).toBe("P1001");
+
+    const loginClient = new LuoguClient({
+      fetchImpl: (async () =>
+        new Response(LOGIN_HTML_FIXTURE, {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })) as typeof fetch,
+    });
+    await expect(loginClient.fetchProblem("P1305")).rejects.toMatchObject({ code: "AUTH_REQUIRED" });
+
+    const challengeClient = new LuoguClient({
+      fetchImpl: (async () =>
+        new Response(CLOUDFLARE_CHALLENGE_HTML_FIXTURE, {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        })) as typeof fetch,
+    });
+    await expect(challengeClient.fetchProblem("P1305")).rejects.toMatchObject({ code: "CHALLENGE_BLOCKED" });
+  });
+
+  test("rejects non-positive uid values instead of coercing them to uid 1", async () => {
+    let called = false;
+    const client = new LuoguClient({
+      fetchImpl: (async () => {
+        called = true;
+        return new Response("{}");
+      }) as typeof fetch,
+    });
+
+    await expect(client.fetchUserProfile(0)).rejects.toBeInstanceOf(LuoguClientError);
+    await expect(client.fetchUserProfile(-5)).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(called).toBe(false);
+  });
+
+  test("supports injecting a custom LuoguParser and baseUrl", async () => {
+    const parserCalls: string[] = [];
+    const customParser: LuoguParser = {
+      extractPayload: (raw) => {
+        parserCalls.push("extract");
+        return JSON.parse(raw);
+      },
+      parseProblem: () => {
+        parserCalls.push("parseProblem");
+        return {
+          platform: "luogu",
+          id: "P1305",
+          title: "Custom Parsed",
+          sourceUrl: "https://mirror.example/problem/P1305",
+          tags: [],
+          statement: "stmt",
+          inputFormat: "in",
+          outputFormat: "out",
+          samples: [],
+        };
+      },
+      parseProblemSearch: () => ({ total: 0, items: [] }),
+      parseProblemSetSearch: () => ({ total: 0, items: [] }),
+      parseProblemSet: () => {
+        throw new Error("unused");
+      },
+      parseUserProfile: () => {
+        throw new Error("unused");
+      },
+    };
+
+    const requestedUrls: string[] = [];
+    const client = new LuoguClient({
+      baseUrl: "https://mirror.example/",
+      parser: customParser,
+      fetchImpl: (async (url: string | URL | Request) => {
+        requestedUrls.push(String(url));
+        return new Response(JSON.stringify(PROBLEM_P1305_PAYLOAD), { status: 200 });
+      }) as typeof fetch,
+    });
+
+    const record = await client.fetchProblem("p1305");
+    expect(requestedUrls[0]).toBe("https://mirror.example/problem/P1305");
+    expect(record.title).toBe("Custom Parsed");
+    expect(parserCalls).toEqual(["extract", "parseProblem"]);
   });
 });
