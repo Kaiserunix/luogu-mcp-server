@@ -269,5 +269,7 @@ describe("Luogu MCP tool handlers", () => {
     expect(profile.name).toBe("kkksc03");
     expect(capabilities.tools.find((tool) => tool.name === "luogu_get_user_profile")?.status).toBe("available");
     expect(capabilities.tools.find((tool) => tool.name === "luogu_get_recent_submissions")?.status).toBe("auth_required");
+
+    await expect(getUserProfileTool({ uid: 0 }, fakeFetch as typeof fetch)).rejects.toThrow("uid must be a positive integer.");
   });
 });

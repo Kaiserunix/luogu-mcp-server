@@ -67,3 +67,46 @@ export interface UserProfile {
   guRating?: number;
   guScores?: Record<string, number>;
 }
+
+export interface SearchProblemsQuery {
+  keyword: string;
+  page?: number;
+  tagIds?: number[];
+}
+
+export type ProblemSetSearchType = "official" | "select";
+
+export interface SearchProblemSetsQuery {
+  keyword: string;
+  page?: number;
+  type?: ProblemSetSearchType;
+}
+
+export interface LuoguGateway {
+  searchProblems(options: SearchProblemsQuery): Promise<SearchResults<ProblemSummary>>;
+  fetchProblem(pid: string): Promise<ProblemRecord>;
+  searchProblemSets(options: SearchProblemSetsQuery): Promise<SearchResults<ProblemSetSummary>>;
+  fetchProblemSet(id: string): Promise<ProblemSetRecord>;
+  fetchUserProfile(uid: number): Promise<UserProfile>;
+}
+
+export interface RawResponseMetadata {
+  contentType?: string | null;
+  url?: string;
+}
+
+export interface LuoguParser {
+  extractPayload(rawText: string, metadata?: RawResponseMetadata): unknown;
+  parseProblem(payload: unknown): ProblemRecord;
+  parseProblemSearch(payload: unknown): SearchResults<ProblemSummary>;
+  parseProblemSetSearch(payload: unknown): SearchResults<ProblemSetSummary>;
+  parseProblemSet(payload: unknown, idHint: string): ProblemSetRecord;
+  parseUserProfile(payload: unknown): UserProfile;
+}
+
+export interface CacheStats {
+  hits: number;
+  misses: number;
+  coalesced: number;
+  size: number;
+}

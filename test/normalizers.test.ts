@@ -1,10 +1,11 @@
 import { describe, expect, test } from "vitest";
 import {
+  LuoguPayloadError,
   normalizeProblemPayload,
   normalizeProblemSearchPayload,
   normalizeProblemSetPayload,
   normalizeProblemSetSearchPayload,
-  normalizeUserProfilePayload
+  normalizeUserProfilePayload,
 } from "../src/normalizers.js";
 
 describe("Luogu payload normalizers", () => {
@@ -213,5 +214,53 @@ describe("Luogu payload normalizers", () => {
       followerCount: 49761,
       guRating: 217
     });
+  });
+
+  test("handles currentData envelopes, object tags, non-finite numbers, and malformed samples", () => {
+    const problem = normalizeProblemPayload({
+      currentData: {
+        problem: {
+          pid: "P1002",
+          name: "过河卒",
+          difficulty: Number.NaN,
+          tags: [11, { id: 99, name: "动态规划" }, { id: 5 }, null],
+          description: "Grid paths",
+          samples: [[], ["6 6 3 3", "6"], { input: "1", output: "2" }, "invalid"]
+        }
+      }
+    });
+
+    expect(problem.difficulty).toBeUndefined();
+    expect(problem.tags).toEqual(["11", "动态规划", "5"]);
+    expect(problem.samples).toEqual([
+      { input: "6 6 3 3", output: "6" },
+      { input: "1", output: "2" }
+    ]);
+
+    const profile = normalizeUserProfilePayload({
+      currentData: {
+        user: {
+          uid: 42,
+          name: "alice",
+          passedProblemCount: null,
+          submittedProblemCount: Number.POSITIVE_INFINITY
+        },
+        gu: {
+          rating: Number.NaN,
+          scores: { practice: 10, bad: Number.NaN }
+        }
+      }
+    });
+
+    expect(profile.passedProblemCount).toBeNull();
+    expect(profile.submittedProblemCount).toBeUndefined();
+    expect(profile.guRating).toBeUndefined();
+    expect(profile.guScores).toEqual({ practice: 10 });
+  });
+
+  test("rejects null or incomplete payloads with LuoguPayloadError", () => {
+    expect(() => normalizeProblemPayload(null)).toThrowError(LuoguPayloadError);
+    expect(() => normalizeProblemSetPayload({ data: { training: {} } }, "100")).toThrowError(LuoguPayloadError);
+    expect(() => normalizeUserProfilePayload({ data: { user: { uid: 1 } } })).toThrowError(LuoguPayloadError);
   });
 });

@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-import { createLuoguMcpServer } from "./server.js";
+import { createDefaultLuoguGateway, createLuoguMcpServer } from "./server.js";
 
 async function main(): Promise<void> {
-  serveStdio(() => createLuoguMcpServer());
+  const sharedGateway = createDefaultLuoguGateway();
+  serveStdio(() => createLuoguMcpServer({ gateway: sharedGateway }));
 }
 
 main().catch((error: unknown) => {
