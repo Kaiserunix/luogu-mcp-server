@@ -45,7 +45,7 @@ Despite these high-value pedagogical internals, first-time users (high-school OI
   - `Kaiserunix/luogu-mcp-server/README.md:15,62` & `server.json:14` advertise `https://luogu-mcp.ksrnyx.top/mcp` (11 tools, `luogu_*` namespace).
   - `ketherworks/competitive-programming-mcp/README.md:38` advertised `https://luogu-mcp-server.lantangtang54.workers.dev/mcp`, while its `docs/deployment/production-endpoints.md:11,17-19` states that **AtCoder & Luogu Cloudflare Workers were removed due to upstream egress blocking** and migrated to `https://api.ksrnyx.top/oj-mcp/luogu/mcp` (4 tools, `oj_*` canonical v1 contract).
   - Meanwhile, `Kaiserunix/luogu-mcp-server/docs/cloudflare-deployment.md:12` still tells users: *"For this workload, Cloudflare Workers is the default public deployment target."*
-  - `Kaiserunix/luogu-mcp-server/README.md:261` leaks a hardcoded author machine path: `C:\Users\qwerf\.continue\.env`.
+  - `Kaiserunix/luogu-mcp-server/README.md` previously referenced a hardcoded developer Windows path (`C:\Users\<user>\.continue\.env`, remediated to `~/.continue/.env` in this docs PR).
 - **UX Impact**: Users and downstream integrations (`student-autocomplete-lab`) do not know which repo, tool namespace, or hosted URL is canonical, and self-hosters who follow `docs/cloudflare-deployment.md` hit unexpected Luogu datacenter IP blocks.
 
 ### 3.2 Friction #2: Per-Client MCP Configuration Schema Mismatches

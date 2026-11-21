@@ -4,6 +4,9 @@
 | --- | --- | --- |
 | [cloudflare-deployment.md](cloudflare-deployment.md) | Cloudflare Workers Streamable HTTP deployment, secrets, CORS, and post-deploy smoke checklist (`src/worker.ts`, `wrangler.jsonc`). | Active |
 | [topic-discovery.md](topic-discovery.md) | Code-verified architecture, ranking heuristic, and 100-topic smoke verification for `luogu_list_algorithm_topics` and `luogu_find_topic_problems`. | Active |
+| [PRODUCT_STRATEGY.md](PRODUCT_STRATEGY.md) | Product positioning vs. `ketherworks/competitive-programming-mcp`, onboarding conversion strategy, and P0–P2 roadmap. | Active |
+| [UX_EXPERIENCE_AND_DESIGN_SPEC.md](UX_EXPERIENCE_AND_DESIGN_SPEC.md) | Code-verified UX audit, user personas, friction analysis, and experience design specification. | Active |
+| [USER_JOURNEY_COPY.md](USER_JOURNEY_COPY.md) | Ready-to-use bilingual product copy, per-client MCP configs, prompt templates, and error/empty-state microcopy deck. | Active |
 | [CLEANUP_CHANGELOG.md](CLEANUP_CHANGELOG.md) | Summary of documentation pruned, consolidated, and verified against `src/` during the docs cleanup audit. | Historical |
 
 ## Top-Level Project Files (Reference)
